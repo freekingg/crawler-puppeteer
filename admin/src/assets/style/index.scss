@@ -1,0 +1,72 @@
+@import './realize/reset';
+@import './realize/animation';
+@import './realize/transition';
+
+.lin-container {
+  .el-divider--horizontal {
+    margin:0px;
+  }
+  .lin-title {
+    height: 59px;
+    line-height: 59px;
+    color: $parent-title-color;
+    font-size: 16px;
+    font-weight: 500;
+    text-indent: 40px;
+    border-bottom: 1px solid #dae1ed;
+  }
+
+  .lin-wrap {
+    padding: 20px;
+  }
+}
+
+.container {
+  .container-header{
+    display: flex;
+    justify-content: flex-start;
+    padding-left: 24px;
+    padding-top: 15px !important;
+    .el-form{
+      
+    }
+    .el-form-item{
+      margin-bottom: 0 !important;
+    }
+    .btn-group{
+      display:flex;
+      justify-content:flex-end;
+      padding-right: 24px;
+    }
+  }
+  .title {
+    min-height: 50px;
+    line-height: 59px;
+    color: $parent-title-color;
+    font-size: 16px;
+    font-weight: 500;
+    padding-left: 40px;
+    border-bottom: 1px solid #dae1ec;
+  }
+  .text-right {
+    text-align: right;
+    padding-right: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .item {
+    margin-left: 10px;
+  }
+  .wrap {
+    padding: 20px;
+    margin-bottom: 12px;
+    background: #fff;
+  }
+  .submit {
+    float: left;
+  }
+  .pages{
+    padding: 0 20px;
+  }
+}

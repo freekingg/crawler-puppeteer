@@ -1,0 +1,13 @@
+
+npm-debug.log
+yarn-error.log
+node_modules/
+package-lock.json
+coverage/
+.idea/
+run/
+suspect/
+.DS_Store
+*.sw*
+*.un~
+dist
