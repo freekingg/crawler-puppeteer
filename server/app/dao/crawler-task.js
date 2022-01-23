@@ -1,7 +1,7 @@
 import { NotFound, Forbidden } from 'lin-mizar';
 import Sequelize from 'sequelize';
-import { set } from 'lodash';
-import { Task } from '../model/task';
+import { CrawlerTask as Task } from '../model/crawler-task';
+
 class TaskDao {
   async getTask (id) {
     const item = await Task.findOne({
@@ -23,10 +23,8 @@ class TaskDao {
     return item;
   }
 
-  async getTasks (v) {
+  async getTasks () {
     const condition = {};
-    v.get('query.type') && set(condition, 'type', v.get('query.type'));
-
     const items = await Task.findAll({
       where: Object.assign({}, condition),
       order: [['create_time', 'DESC']]
@@ -47,12 +45,17 @@ class TaskDao {
     }
     const bk = new Task();
     bk.title = v.get('body.title');
-    bk.accounts = v.get('body.accounts');
-    bk.contentData = v.get('body.contentData');
-    bk.status = v.get('body.status');
-    bk.type = v.get('body.type');
+    bk.url = v.get('body.url');
+    bk.implement = v.get('body.implement');
+    bk.implementPre = v.get('body.implementPre');
     bk.time = v.get('body.time');
+    bk.proxyType = v.get('body.proxyType');
+    bk.proxyIp = v.get('body.proxyIp');
+    bk.account = v.get('body.account');
+    bk.pwd = v.get('body.pwd');
+    bk.status = v.get('body.status');
     bk.summary = v.get('body.summary');
+    bk.authData = v.get('body.authData');
     bk.extra = v.get('body.extra');
     await bk.save();
   }
@@ -65,20 +68,34 @@ class TaskDao {
       });
     }
     item.title = v.get('body.title');
-    item.accounts = v.get('body.accounts');
-    item.contentData = v.get('body.contentData');
-    item.status = v.get('body.status');
-    item.type = v.get('body.type');
+    item.url = v.get('body.url');
+    item.implement = v.get('body.implement');
+    item.implementPre = v.get('body.implementPre');
     item.time = v.get('body.time');
+    item.proxyType = v.get('body.proxyType');
+    item.proxyIp = v.get('body.proxyIp');
+    item.account = v.get('body.account');
+    item.pwd = v.get('body.pwd');
+    item.status = v.get('body.status');
     item.summary = v.get('body.summary');
+    item.authData = v.get('body.authData');
     item.extra = v.get('body.extra');
     await item.save();
   }
 
-  async updateTaskAuthData ({ authData }, id) {
-    console.log('id: ', id);
+  async updateTaskStatus ({ status }, id) {
     const item = await Task.findByPk(id);
-    console.log('item: ', item);
+    if (!item) {
+      throw new NotFound({
+        code: 10022
+      });
+    }
+    item.status = status;
+    await item.save();
+  }
+
+  async updateTaskAuthData ({ authData }, id) {
+    const item = await Task.findByPk(id);
     if (!item) {
       throw new NotFound({
         code: 10022

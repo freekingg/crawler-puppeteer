@@ -1,12 +1,11 @@
 <template>
   <el-dialog v-model="visible" title="Tips" :close-on-click-modal="false">
     <el-form :model="dataForm" :rules="dataRule" ref="dataFormRef" label-width="120px">
-      <el-form-item prop="phone" label="电话号码">
-        <el-input disabled v-model="dataForm.phone" placeholder="请输入手机号带 + " />
+      <el-form-item prop="phone" label="账号">
+        <el-input disabled v-model="dataForm.account"  />
       </el-form-item>
       <el-form-item prop="loginType" label="登录">
-        <!-- <p>请扫描以下二维码有登录</p> -->
-        <el-button type="primary" @click="authLoginHandle" :disabled="qrLoading" :loading="qrLoading">点击登录</el-button>
+        <el-button type="primary" @click="authLoginHandle" :disabled="qrLoading" :loading="qrLoading">{{qrLoading ? '登录中...' : '点击登录'}}</el-button>
       </el-form-item>
       <el-form-item prop="authData" label="验权信息">
         <el-input
@@ -25,6 +24,7 @@
 import { reactive, toRefs, nextTick, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import accountModel from '@/model/account'
+import taskModel from '@/model/task'
 
 export default {
   emits: ['refreshDataList'],
@@ -53,9 +53,8 @@ export default {
       nextTick(async () => {
         dataFormRef.value.resetFields()
         if (data.dataForm.id) {
-          const info = await accountModel.getAccount(data.dataForm.id)
+          const info = await taskModel.getTask(data.dataForm.id)
           data.dataForm = info
-          data.dataForm.loginType = 1
         }
       })
     }
@@ -66,17 +65,8 @@ export default {
 
     const authLoginHandle = async () => {
       data.qrLoading = true
-      // 每5s获取一次二维码图片
-      let timer2 = null
-      setTimeout(() => {
-        timer2 = setInterval(() => {
-          getLoginQrHandle()
-        }, 5000)
-      }, 5000)
-
       try {
-        const info = await accountModel.authLogin(data.dataForm)
-        clearInterval(timer2)
+        const info = await taskModel.authLogin(data.dataForm)
         console.log('info: ', info)
         data.qrLoading = false
         data.dataForm.authData = info.authData
@@ -86,14 +76,12 @@ export default {
           duration: 500,
           onClose: () => {
             visible.value = false
-            loginQr.value = ''
             context.emit('refreshDataList')
           },
         })
 
       } catch (error) {
         console.log(error)
-        clearInterval(timer2)
         data.qrLoading = false
         ElMessage({
           message: '出错了，请重试',
@@ -106,19 +94,6 @@ export default {
           },
         })
       }
-    }
-
-    const getLoginQrHandle = () => {
-      accountModel
-        .getLoginQr(data.dataForm)
-        .then(result => {
-          if (result.path) {
-            loginQr.value = result.path+ '?t='+ Math.random()
-          }
-        })
-        .catch(err => {
-          console.log(err)
-        })
     }
 
     // 表单提交

@@ -17,7 +17,10 @@
         <el-input v-model="dataForm.url" placeholder="请输入登录网址" />
       </el-form-item>
       <el-form-item prop="implement" label="实现类">
-        <el-input v-model="dataForm.implement" placeholder="对应后端服务的实现方法" />
+        <el-input v-model="dataForm.implement" placeholder="对应后端服务的业务实现方法" />
+      </el-form-item>
+      <el-form-item prop="implementBefore" label="前置实现类">
+        <el-input v-model="dataForm.implementBefore" placeholder="实现类前开始的方法，如登录或者预处理方法" />
       </el-form-item>
       <el-form-item prop="summary" label="简介">
         <el-input
@@ -71,7 +74,8 @@ export default {
         phone: '',
         summary: '',
         url: '',
-        extra: ''
+        extra: '',
+        implementBefore:'',
       },
       dataRule: {
         phone: [{ required: true, message: '请输入账号', trigger: 'blur' }],

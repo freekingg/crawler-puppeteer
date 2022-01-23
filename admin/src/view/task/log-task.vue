@@ -2,51 +2,53 @@
   <div class="container">
     <el-row class="container-header" justify="space-between">
       <el-col :span="15">
-        <!-- <el-form :inline="true" :model="dataForm" @keyup.enter="getDataList()">
+        <el-form :inline="true" :model="dataForm" @keyup.enter="getDataList()">
           <el-form-item>
-            <el-input v-model="dataForm.host" placeholder="请输入域名" clearable />
+            <el-select v-model="dataForm.task_id" class="m-2" placeholder="任务名称" clearable>
+              <el-option
+                v-for="item in tasks"
+                :key="item.id"
+                :label="item.title"
+                :value="item.id"
+              >
+              </el-option>
+           </el-select>
           </el-form-item>
-        </el-form> -->
+        </el-form>
       </el-col>
 
       <el-col :span="6" class="btn-group">
         <el-button-group>
           <el-button icon="el-icon-search" @click="getDataList(dataForm)">查询</el-button>
-          <el-button type="primary" icon="el-icon-plus" @click="addOrUpdateHandle">添加</el-button>
         </el-button-group>
       </el-col>
     </el-row>
 
     <div class="wrap">
       <el-table size="mini" v-loading="dataListLoading" :data="dataList" border>
-        <el-table-column prop="title" label="名称"  />
-        <el-table-column label="内容" width="120">
+        <el-table-column prop="crawler_task.title" label="名称" width="160"/>
+        <el-table-column prop="task_index" label="轮次" width="70"/>
+        <el-table-column label="参数">
           <template #default="scope">
-            详情中查看
-          </template>
-        </el-table-column>
-         <el-table-column prop="time" label="间隔时间(秒)"  width="120"/>
-        <el-table-column label="帐号" width="300">
-          <template #default="scope">
-            <div class="account-box">
-              <el-tag size="medium" style="margin-right:2px;margin-bottom:2px"  type="info" v-for="(item,index) in scope.row.accounts" :key="index">{{item.phone}}</el-tag>
+            <div>
+              {{scope.row.params}}
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="100">
+        <el-table-column label="结果">
           <template #default="scope">
-            <el-tag size="medium" v-if="scope.row.status == 2">进行中</el-tag>
-            <el-tag size="medium"  type="info" v-else>停止</el-tag>
+            <div>
+              {{scope.row.result}}
+            </div>
           </template>
         </el-table-column>
-        <el-table-column prop="create_time" label="创建时间" width="150"/>
-        <el-table-column label="操作" fixed="right" header-align="center" align="center" width="260">
+        <el-table-column label="状态" width="120">
           <template #default="scope">
-            <el-button type="success" size="mini" @click="addOrUpdateHandle(scope.row.id)">修改</el-button>
-            <el-button type="primary" size="mini" @click="loginHandle(scope.row.id, scope.row)">{{scope.row.status == 2 ?'停止':'开始'}}</el-button>
-            <el-button type="danger" size="mini" @click="deleteHandle(scope.row.id, scope.row)">删除</el-button>
+            <el-tag v-if="scope.row.status == 0" size="small" type="success" >成功</el-tag>
+            <el-tag size="small" type="info" v-else  @click="addOrUpdateHandle(scope.row.id)">异常</el-tag>
           </template>
         </el-table-column>
+        <el-table-column prop="create_time" label="创建时间" width="160" />
       </el-table>
     </div>
     <!-- 弹窗, 新增 / 修改 -->
@@ -56,14 +58,15 @@
 
 <script>
 import { reactive, toRefs, ref, nextTick } from 'vue'
-
+import taskLogModel from '@/model/log-task'
 import taskModel from '@/model/task'
 import mixinViewModule from '@/common/mixin/view-module'
-import AddOrUpdate from './bubble-add-or-update.vue'
+import AddOrUpdate from './log-task-add-or-update.vue'
 
 export default {
   components: {
     AddOrUpdate,
+    History,
   },
   setup() {
     const addOrUpdate = ref(null)
@@ -71,8 +74,8 @@ export default {
     const mixinModuleOptions = {
       getDataListIsPage: true,
       addOrUpdate,
-      getDataListModel: taskModel.getTasks,
-      deleteDataModel: taskModel.deleteTask,
+      getDataListModel: taskLogModel.getLogs,
+      deleteDataModel: taskLogModel.deleteLog,
     }
 
     const {
@@ -87,21 +90,23 @@ export default {
 
     const data = reactive({
       dataForm: {
-        type:2
+        type: 1,
       },
-      loginAddOrUpdateVisible:false
+      tasks:[],
+      loginAddOrUpdateVisible: false,
+      historyVisible: false,
+    })
+
+    taskModel.getTasks().then((result) => {
+      data.tasks = result.map(item=>{
+        return {
+          title:item.title,
+          id:item.id,
+        }
+      })
     })
 
     initMixinViewModuleOptions(mixinModuleOptions, data.dataForm)
-
-    const loginHandle = (id) => {
-      data.loginAddOrUpdateVisible = true
-      nextTick(() => {
-        loginAddOrUpdate.value.dataForm.id = id
-        loginAddOrUpdate.value.init()
-      })
-
-    }
 
     return {
       ...toRefs(data),
@@ -113,7 +118,6 @@ export default {
       dataListLoading,
       deleteHandle,
       dataList,
-      loginHandle
     }
   },
 }
@@ -145,11 +149,14 @@ export default {
     float: left;
   }
 
-  .account-box{
+  .account-box {
     display: flex;
     flex-wrap: wrap;
     max-height: 80px;
     overflow: auto;
   }
+}
+.btn-area button{
+  margin-bottom: 4px;
 }
 </style>

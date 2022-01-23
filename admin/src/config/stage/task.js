@@ -1,7 +1,7 @@
 const demoRouter = {
   route: null,
   name: null,
-  title: '任务管理',
+  title: '爬虫管理',
   type: 'folder', // 类型: folder, tab, view
   icon: 'iconfont icon-naozhongxiaoxitixing',
   filePath: 'view/task/', // 文件路径
@@ -9,22 +9,40 @@ const demoRouter = {
   inNav: true,
   children: [
     {
-      title: '灌水模式',
+      title: '任务列表',
       type: 'view',
-      name: 'Demo',
-      route: '/task/irrigation',
-      filePath: 'view/task/irrigation.vue',
+      name: 'tasklist',
+      route: '/task/task',
+      filePath: 'view/task/task.vue',
       inNav: true,
       icon: 'iconfont icon-naozhongxiaoxitixing',
     },
     {
-      title: '冒泡模式',
+      title: '任务日志',
       type: 'view',
-      name: 'Demo',
-      route: '/task/bubble',
-      filePath: 'view/task/bubble.vue',
+      name: 'tasklogtask',
+      route: '/task/log/task',
+      filePath: 'view/task/log-task.vue',
       inNav: true,
-      icon: 'iconfont icon-naozhongxiaoxitixing',
+      icon: 'iconfont icon-rizhiguanli',
+    },
+    {
+      title: '运行日志',
+      type: 'view',
+      name: 'tasklogrun',
+      route: '/task/log/run',
+      filePath: 'view/task/log-run.vue',
+      inNav: true,
+      icon: 'iconfont icon-rizhiguanli',
+    },
+    {
+      title: '数据列表',
+      type: 'view',
+      name: 'tasklogrun',
+      route: '/task/log/run',
+      filePath: 'view/task/log-run.vue',
+      inNav: true,
+      icon: 'iconfont icon-rizhiguanli',
     },
   ],
 }

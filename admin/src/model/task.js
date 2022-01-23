@@ -10,6 +10,14 @@ class Task {
     })
   }
 
+  async authLogin(data) {
+    return _axios({
+      method: 'post',
+      url: 'v1/task/auth/login',
+      data,
+    })
+  }
+
   async starTirrigationTask(data) {
     return _axios({
       method: 'post',

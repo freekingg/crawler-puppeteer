@@ -1,6 +1,7 @@
 import { LinValidator, Rule } from 'lin-mizar';
+import { PaginateValidator } from './common';
 
-class TaskSearchValidator extends LinValidator {
+class TaskSearchValidator extends PaginateValidator {
   constructor () {
     super();
     this.q = new Rule('isOptional', '必须传入搜索关键字');

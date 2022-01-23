@@ -1,8 +1,5 @@
 import Utils from '@/lin/util/util'
 import adminConfig from './admin'
-import bookConfig from './book'
-import demoConfig from './demo'
-import accountConfig from './account'
 import taskConfig from './task'
 import pluginsConfig from './plugin'
 
@@ -18,17 +15,7 @@ let homeRouter = [
     icon: 'iconfont icon-iconset0103',
     order: 1,
   },
-  {
-    title: '日志管理',
-    type: 'view',
-    name: Symbol('log'),
-    route: '/log',
-    filePath: 'view/log/log.vue',
-    inNav: true,
-    icon: 'iconfont icon-rizhiguanli',
-    order: 2,
-    permission: ['查询所有日志'],
-  },
+
   {
     title: '个人中心',
     type: 'view',
@@ -47,17 +34,24 @@ let homeRouter = [
     inNav: false,
     icon: 'iconfont icon-rizhiguanli',
   },
-  accountConfig,
   taskConfig,
-  demoConfig,
-  bookConfig,
   adminConfig,
+  {
+    title: '操作日志',
+    type: 'view',
+    name: Symbol('log'),
+    route: '/log',
+    filePath: 'view/log/log.vue',
+    inNav: true,
+    icon: 'iconfont icon-rizhiguanli',
+    permission: ['查询所有日志'],
+  },
 ]
 
 // 接入插件
 const plugins = [...pluginsConfig]
 filterPlugin(homeRouter)
-homeRouter = homeRouter.concat(plugins)
+// homeRouter = homeRouter.concat(plugins)
 
 // 处理顺序
 homeRouter = Utils.sortByOrder(homeRouter)
