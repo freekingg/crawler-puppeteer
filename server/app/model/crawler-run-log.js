@@ -5,7 +5,7 @@ import { merge } from 'lodash';
 import { CrawlerTask as CrawlerTaskModals } from './crawler-task';
 
 class CrawlerRunModel extends Model {
-  toJSON () {
+  toJSON() {
     const origin = {
       id: this.id,
       task_id: this.task_id,
@@ -20,7 +20,7 @@ class CrawlerRunModel extends Model {
     return origin;
   }
 
-  static createLog (args, commit) {
+  static createLog(args, commit) {
     const log = CrawlerRunModel.build(args);
     commit && log.save();
     return log;
@@ -40,7 +40,7 @@ CrawlerRunModel.init(
     },
     task_index: {
       type: Sequelize.INTEGER,
-      allowNull: false
+      allowNull: true
     },
     message: {
       type: Sequelize.TEXT('long')
@@ -53,9 +53,9 @@ CrawlerRunModel.init(
       allowNull: true
     },
     status: {
-      type: Sequelize.BOOLEAN,
-      comment: '0：成功 1：异常',
-      defaultValue: 1
+      type: Sequelize.INTEGER(2),
+      defaultValue: 0,
+      comment: '0：成功 1：异常'
     }
   },
   merge(

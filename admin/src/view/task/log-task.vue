@@ -14,6 +14,17 @@
               </el-option>
            </el-select>
           </el-form-item>
+          <el-form-item>
+            <el-select v-model="dataForm.status" class="m-2" placeholder="运行状态" clearable>
+              <el-option
+                v-for="item in status"
+                :key="item.status"
+                :label="item.title"
+                :value="item.status"
+              >
+              </el-option>
+           </el-select>
+          </el-form-item>
         </el-form>
       </el-col>
 
@@ -93,6 +104,16 @@ export default {
         type: 1,
       },
       tasks:[],
+      status:[
+        {
+          title:'正常',
+          status:0
+        },
+        {
+          title:'异常',
+          status:1
+        }
+      ],
       loginAddOrUpdateVisible: false,
       historyVisible: false,
     })

@@ -1,10 +1,42 @@
-import puppeteer from "puppeteer-extra";
-import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { CrawlerRunModel } from '../../model/crawler-run-log';
 
-import signin from "./signin";
-import start from "./start";
+import checkIp from '../../lib/checkIp';
+import signin from './signin';
+import start from './start';
 
 puppeteer.use(StealthPlugin());
+
+let launchOptions = {
+  headless: false,
+  timeout: 60000,
+  ignoreHTTPSErrors: true, // 忽略证书错误
+  args: [
+    '--disable-gpu',
+    '--disable-dev-shm-usage',
+    '--disable-web-security',
+    '--disable-xss-auditor',
+    '--disable-accelerated-2d-canvas',
+    '--ignore-certifcate-errors',
+    '--ignore-certifcate-errors-spki-list',
+    '--no-zygote',
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-webgl',
+    '--disable-dev-shm-usage',
+    '--disable-web-security',
+    '--disable-xss-auditor', // 关闭 XSS Auditor
+    '--no-zygote',
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--allow-running-insecure-content', // 允许不安全内容
+    '--disable-webgl',
+    '--disable-popup-blocking',
+    '--disable-infobars'
+    // `${proxyObj}`
+  ]
+};
 
 /**
  * puppeteer 自动化执行类
@@ -15,8 +47,8 @@ puppeteer.use(StealthPlugin());
  */
 class PuppeteerBharatpe {
   constructor(opts = {}) {
-    this._opts = { ...opts, puppeteer: { headless: false } };
-    this._user = null;
+    this._opts = opts;
+    this.launchOptions = launchOptions;
   }
 
   /**
@@ -44,10 +76,25 @@ class PuppeteerBharatpe {
    */
   async browser() {
     if (!this._browser) {
-      this._browser = await puppeteer.launch(this._opts.puppeteer);
-      this._browser.on("disconnected", (e) => {
-        console.log("浏览器关闭了", e);
-        this._browser = null
+      let launchOptions = {
+        headless: false,
+        ...this._opts.puppeteer
+      };
+
+      // 设置代理
+      if (this._opts.proxyType && this._opts.proxyIp && this._opts.proxyType != 4) {
+        this.launchOptions.args.push(`--proxy-server=http://${this._opts.proxyIp}`);
+        let canuse = await checkIp({ ip: this._opts.proxyI });
+        if (!canuse) {
+          // 代理不可用
+          return Promise.reject(new Error(`${this._opts.title} - ${this._opts.proxyIp} 代理不可用`));
+        }
+      }
+
+      this._browser = await puppeteer.launch(launchOptions);
+      this._browser.on('disconnected', e => {
+        console.log('浏览器关闭了', e);
+        this._browser = null;
       });
     }
 
@@ -64,10 +111,17 @@ class PuppeteerBharatpe {
    * @return {Promise}
    */
   async signin(opts = {}) {
-    if (!opts.account || !opts.pwd) throw new Error("登录信息不完整，");
-    const browser = await this.browser();
+    if (!opts.account || !opts.pwd) {
+      return Promise.reject(new Error('登录信息不完整，'));
+    }
+
     let authData = {};
-    authData = await signin(browser, opts);
+    try {
+      const browser = await this.browser();
+      authData = await signin(browser, opts);
+    } catch (error) {
+      return Promise.reject(error);
+    }
     return authData;
   }
 
@@ -79,9 +133,14 @@ class PuppeteerBharatpe {
    *
    */
   async start(opts = {}) {
-    const browser = await this.browser();
-    let res = await start(browser, opts);
-    return res
+    let res = {};
+    try {
+      const browser = await this.browser();
+      res = await start(browser, opts);
+    } catch (error) {
+      return Promise.reject(error);
+    }
+    return res;
   }
 
   /**

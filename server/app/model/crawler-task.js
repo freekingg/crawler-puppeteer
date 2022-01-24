@@ -4,7 +4,7 @@ import { Sequelize, Model } from 'sequelize';
 import sequelize from '../lib/db';
 
 class CrawlerTask extends Model {
-  toJSON () {
+  toJSON() {
     const origin = {
       id: this.id,
       title: this.title,
@@ -55,8 +55,8 @@ CrawlerTask.init(
     },
     proxyType: {
       type: Sequelize.INTEGER(2),
-      defaultValue: 1,
-      comment: '类型 1：http代理 2：socks5代理 3：其它'
+      defaultValue: 4,
+      comment: '类型 1：http代理 2：socks5代理 3：其它 4 ：不使用'
     },
     proxyIp: {
       type: Sequelize.STRING(500),

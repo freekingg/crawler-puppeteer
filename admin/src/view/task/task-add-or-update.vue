@@ -76,14 +76,16 @@
         <el-radio-group v-model="dataForm.proxyType">
           <el-radio :label="1">http代理</el-radio>
           <el-radio :label="2">socks5代理</el-radio>
+          <el-radio :label="3">其它</el-radio>
+          <el-radio :label="4">不使用</el-radio>
         </el-radio-group>
-        <div>
+        <div v-if="dataForm.proxyType != 4">
           <el-input v-model="dataForm.proxyIp" placeholder="请输入代理">
             <template #suffix>
               <el-popover title="提示" :width="200" trigger="hover">
                 <div>
                   <p>
-                    代理服务的IP，如留空则不使用代理
+                    代理服务的IP，如留空则不使用代理，多个代理使用 | 隔开
                   </p>
                   
                 </div>
@@ -155,7 +157,7 @@ export default {
         phone: '',
         type: 1,
         summary: '',
-        proxyType: '',
+        proxyType: 4,
       },
       dataRule: {
         title: [{ required: true, message: '请输入名称', trigger: 'blur' }],

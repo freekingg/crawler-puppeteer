@@ -4,13 +4,14 @@ module.exports = {
   rules: {
     semi: ['warn', 'always'],
     quotes: ['warn', 'single'],
-    'camelcase': 0,
+    camelcase: 0,
     'eol-last': 0,
     'jest/no-disabled-tests': 'warn',
     'jest/no-focused-tests': 'error',
     'jest/no-identical-title': 'error',
     'jest/prefer-to-have-length': 'warn',
     'jest/valid-expect': 'error',
+    'space-before-function-paren': 0
   },
   env: {
     jest: true
