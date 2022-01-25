@@ -11,7 +11,7 @@ class TaskSearchValidator extends PaginateValidator {
 class CreateOrUpdateTaskValidator extends LinValidator {
   constructor() {
     super();
-    this.title = new Rule('isNotEmpty', '必须传入手机号');
+    this.title = new Rule('isOptional', '必须传入手机号');
   }
 }
 

@@ -1,6 +1,6 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { CrawlerRunModel } from '../../model/crawler-run-log';
+import dayjs from 'dayjs';
 
 import checkIp from '../../lib/checkIp';
 import signin from './signin';
@@ -45,7 +45,17 @@ let launchOptions = {
  * @param {Object} [opts.browser] - Puppeteer browser instance to use
  * @param {Object} [opts.puppeteer] - Puppeteer [launch options](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions)
  */
-class PuppeteerTest {
+class PuppeteerBharatpe {
+  static getParams(newJobTime = {}) {
+    let time = {
+      startTime: dayjs(newJobTime['endTime']).format('YYYY-MM-DD HH:mm:ss'),
+      endTime: dayjs(newJobTime['endTime'])
+        .add(1, 'minute')
+        .format('YYYY-MM-DD HH:mm:ss')
+    };
+    return time;
+  }
+
   constructor(opts = {}) {
     this._opts = opts;
     this.launchOptions = launchOptions;
@@ -154,4 +164,12 @@ class PuppeteerTest {
     this._browser = null;
   }
 }
-export { PuppeteerTest };
+
+PuppeteerBharatpe.initParams = {
+  startTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+  endTime: dayjs()
+    .add(1, 'minute')
+    .format('YYYY-MM-DD HH:mm:ss')
+};
+export { PuppeteerBharatpe };
+// export default { PuppeteerBharatpe };

@@ -1,5 +1,6 @@
-import { PuppeteerBharatpe } from "./test";
+import { PuppeteerTest } from './test';
+import { PuppeteerBharatpe } from './bharatpe';
 
-let crawler = { PuppeteerBharatpe };
+let crawler = { PuppeteerTest, PuppeteerBharatpe };
 
 export { crawler };

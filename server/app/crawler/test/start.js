@@ -9,7 +9,7 @@ export default async function(browser, opts) {
   // 设置headers
   await page.setExtraHTTPHeaders(headers);
 
-  await page.goto(opts.url + 2);
+  await page.goto(opts.url);
   await page.close();
   return {
     status: true

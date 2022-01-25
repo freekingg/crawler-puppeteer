@@ -7,10 +7,17 @@ import { PositiveIdValidator } from '../../validator/common';
 import { crawler } from '../../crawler';
 
 import { getSafeParamId } from '../../lib/util';
+import { filterResult } from './filterData';
 import { TaskDao } from '../../dao/crawler-task';
 
 import { CrawlerRunModel } from '../../model/crawler-run-log';
 import { CrawlerTaskModel } from '../../model/crawler-task-log';
+import { CrawlerDataDao } from '../../dao/crawler-data';
+import { CrawlerTaskLogDao } from '../../dao/crawler-task-log';
+
+import dayjs from 'dayjs';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
+dayjs.extend(localizedFormat);
 
 const taskApi = new LinRouter({
   prefix: '/v1/task',
@@ -20,11 +27,15 @@ const taskApi = new LinRouter({
 let taskJob = {};
 
 const TaskDto = new TaskDao();
+const CrawlerDataDto = new CrawlerDataDao();
+const CrawlerTaskLogDto = new CrawlerTaskLogDao();
 
-const TaskHandle = (implement, opt) => {
+const TaskHandle = async (implement, opt) => {
   let id = opt.id;
   const Instance = new crawler[implement](opt);
   // await Instance.start(opt);
+
+  // return;
 
   CrawlerRunModel.createLog(
     {
@@ -37,43 +48,50 @@ const TaskHandle = (implement, opt) => {
 
   taskJob[`task${id}`] = {};
   taskJob[`task${id}`]['count'] = 0;
+  taskJob[`task${id}`]['params'] = crawler[implement]['initParams'];
+  console.log('initParams', crawler[implement]['initParams']);
+
   taskJob[`task${id}`]['timer'] = schedule.scheduleJob(`${opt.time}`, function() {
     if (taskJob[`task${id}`]['runing']) return;
     taskJob[`task${id}`]['runing'] = true;
     taskJob[`task${id}`]['count'] += 1;
     let count = taskJob[`task${id}`]['count'];
+
+    let newJobTime = JSON.parse(JSON.stringify(taskJob[`task${id}`]['params']));
+    taskJob[`task${id}`]['params'] = crawler[implement].getParams(newJobTime);
+    opt.params = taskJob[`task${id}`]['params'];
     Instance.start(opt)
       .then(res => {
         console.log('任务成功', res);
-        if (res.status) {
-          taskJob[`task${id}`]['runing'] = false;
-          CrawlerRunModel.createLog(
-            {
-              task_id: id,
-              task_index: count,
-              message: `${opt.title}: 定时任务执行成功,当前第${count}次`,
-              status: 0
-            },
-            true
-          );
-          CrawlerTaskModel.createLog(
-            {
-              task_id: opt.id,
-              task_index: count,
-              params: JSON.stringify({
-                startTime: '2020-10-10',
-                endTime: '2020-10-11'
-              }),
-              result: JSON.stringify({
-                total: 20
-              }),
-              status: 0,
-              message: `${opt.title}: 定时任务执行成功,当前第${count}次`
-            },
-            true
-          );
-        } else {
-        }
+        taskJob[`task${id}`]['runing'] = false;
+        let { info } = filterResult(res, implement);
+
+        CrawlerRunModel.createLog(
+          {
+            task_id: id,
+            task_index: count,
+            message: `${opt.title}: 定时任务执行成功,当前第${count}次`,
+            status: 0
+          },
+          true
+        );
+        CrawlerTaskModel.createLog(
+          {
+            task_id: opt.id,
+            task_index: count,
+            params: JSON.stringify(taskJob[`task${id}`]['params']),
+            result: JSON.stringify(info),
+            status: 0,
+            message: `${opt.title}: 定时任务执行成功,当前第${count}次`
+          },
+          true
+        ).then(async result => {
+          let crawlerTaskId = result.id;
+          let { list } = filterResult(res, implement, crawlerTaskId);
+          for (const iterator of list) {
+            await CrawlerDataDto.createItem(iterator);
+          }
+        });
       })
       .catch(error => {
         console.log('任务失败', error);
@@ -83,6 +101,7 @@ const TaskHandle = (implement, opt) => {
             task_id: id,
             task_index: count,
             status: 1,
+            params: JSON.stringify(taskJob[`task${id}`]['params']),
             message: `${opt.title}: 定时任务执行失败,当前第${taskJob[`task${id}`]['count']}次--${error.message}`,
             errorStack: `${error.message},${error.stack},`
           },
@@ -92,13 +111,7 @@ const TaskHandle = (implement, opt) => {
           {
             task_id: opt.id,
             task_index: count,
-            params: JSON.stringify({
-              startTime: '2020-10-10',
-              endTime: '2020-10-11'
-            }),
-            result: JSON.stringify({
-              total: 20
-            }),
+            params: JSON.stringify(taskJob[`task${id}`]['params']),
             status: 1,
             message: `${opt.title}: 定时任务执行失败,当前第${count}次--${error.message}`,
             errorStack: `${error.message},${error.stack},`
@@ -144,15 +157,6 @@ taskApi.get('/', loginRequired, async ctx => {
   const v = await new TaskSearchValidator().validate(ctx);
   const items = await TaskDto.getTasks(v);
   ctx.json(items);
-});
-
-taskApi.get('/search/one', loginRequired, async ctx => {
-  const v = await new TaskSearchValidator().validate(ctx);
-  const item = await TaskDto.getTaskByKeyword(v.get('query.q'));
-  if (!item) {
-    throw new NotFound();
-  }
-  ctx.json(item);
 });
 
 taskApi.post('/', loginRequired, async ctx => {
@@ -201,16 +205,27 @@ taskApi.post('/auth/login', loginRequired, async ctx => {
       },
       true
     );
-
+    Instance.close();
     throw new NotFound({
       code: 10022,
       message: '登陆出错，请检查或者重试'
     });
   }
+  Instance.close();
+
+  CrawlerRunModel.createLog(
+    {
+      task_id: opt.id,
+      message: `${opt.title},网站登录成功`,
+      status: 0
+    },
+    true
+  );
+
   ctx.json({ authData });
 });
 
-taskApi.post('/start/irrigation', loginRequired, async ctx => {
+taskApi.post('/start/task', loginRequired, async ctx => {
   const v = await new TaskSearchValidator().validate(ctx);
   const opt = v.get('body');
   const id = opt.id;
@@ -235,7 +250,158 @@ taskApi.post('/start/irrigation', loginRequired, async ctx => {
   });
 });
 
-taskApi.post('/stop/irrigation', async ctx => {
+taskApi.post('/start/task/patch', loginRequired, async ctx => {
+  const v = await new TaskSearchValidator().validate(ctx);
+  const opt = v.get('body');
+  const id = opt.id;
+  const implement = opt.implement;
+
+  CrawlerRunModel.createLog(
+    {
+      task_id: id,
+      message: `${opt.title} 补单任务启动了,参数 ${opt.extra}`,
+      status: 0
+    },
+    true
+  );
+
+  let opts = {
+    ...opt,
+    params: opt.extra ? JSON.parse(opt.extra) : {}
+  };
+  const Instance = new crawler[implement](opts);
+  Instance.start(opts)
+    .then(async res => {
+      let { info } = filterResult(res, implement);
+
+      CrawlerRunModel.createLog(
+        {
+          task_id: id,
+          message: `${opts.title}-${id} : 补单任务执行成功`,
+          extra: opt.extra,
+          status: 0
+        },
+        true
+      );
+
+      CrawlerTaskModel.createLog(
+        {
+          task_id: id,
+          params: JSON.stringify(opts.params),
+          result: JSON.stringify(info),
+          extra: opt.extra,
+          status: 0,
+          message: `${opts.title}: 补单任务执行成功`
+        },
+        true
+      ).then(async result => {
+        let crawlerTaskId = result.id;
+        let { list } = filterResult(res, implement, crawlerTaskId);
+        for (const iterator of list) {
+          await CrawlerDataDto.createItem(iterator);
+        }
+      });
+    })
+    .catch(error => {
+      CrawlerRunModel.createLog(
+        {
+          task_id: id,
+          status: 1,
+          params: JSON.stringify(opts.params),
+          extra: opt.extra,
+          message: `${opt.title}: 补单任务执行失败: ${error.message}`,
+          errorStack: `${error.message},${error.stack},`
+        },
+        true
+      );
+      CrawlerTaskModel.createLog(
+        {
+          task_id: id,
+          message: `${opt.title}: 补单任务执行失败: ${error.message}`,
+          status: 1,
+          params: JSON.stringify(opts.params),
+          extra: opt.extra,
+          errorStack: `${error.message},${error.stack},`
+        },
+        true
+      );
+    });
+
+  ctx.success({
+    code: 12
+  });
+});
+
+// 重试任务
+taskApi.post('/start/retask', loginRequired, async ctx => {
+  const v = await new TaskSearchValidator().validate(ctx);
+  const opt = v.get('body');
+  const id = opt.id;
+  const { crawler_task } = opt;
+  const implement = crawler_task.implement;
+  let opts = {
+    ...opt.crawler_task,
+    params: opt.params ? JSON.parse(opt.params) : {}
+  };
+  CrawlerRunModel.createLog(
+    {
+      task_id: crawler_task.id,
+      task_index: opt.task_index,
+      message: `${crawler_task.title}-${opt.id} 异常任务开始重新执行了`,
+      status: 0
+    },
+    true
+  );
+
+  const Instance = new crawler[implement](opts);
+  Instance.start(opts)
+    .then(async res => {
+      let { info } = filterResult(res, implement);
+
+      CrawlerRunModel.createLog(
+        {
+          task_id: crawler_task.id,
+          task_index: opt.task_index,
+          message: `${crawler_task.title}-${id} : 异常任务重新执行成功了`,
+          status: 0
+        },
+        true
+      );
+
+      await CrawlerTaskLogDto.updateItem(
+        {
+          task_id: crawler_task.id,
+          result: JSON.stringify(info),
+          status: 0,
+          message: `${crawler_task.title}-${id} : 异常任务重新执行成功了`
+        },
+        opt.id
+      );
+
+      let crawlerTaskId = opt.id;
+      let { list } = filterResult(res, implement, crawlerTaskId);
+      for (const iterator of list) {
+        await CrawlerDataDto.createItem(iterator);
+      }
+    })
+    .catch(error => {
+      console.log('任务失败', error);
+      CrawlerRunModel.createLog(
+        {
+          task_id: crawler_task.id,
+          task_index: opt.task_index,
+          message: `${crawler_task.title}-${opt.id}: 异常任务重新执行还是失败,${error.message}`,
+          status: 1
+        },
+        true
+      );
+    });
+  ctx.success({
+    code: 12
+  });
+});
+
+taskApi.post('/stop/task', async ctx => {
   const v = await new TaskSearchValidator().validate(ctx);
   const opt = v.get('body');
   const id = opt.id;

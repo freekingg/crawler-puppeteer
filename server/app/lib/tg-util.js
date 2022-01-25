@@ -10,7 +10,7 @@ async function getLocalStorage(page) {
 }
 
 async function getCookie(page) {
-  const cookies = await page.cookies()
+  const cookies = await page.cookies();
   return cookies;
 }
 

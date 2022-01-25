@@ -26,16 +26,31 @@
           v-model="dataForm.errorStack"
         ></el-input>
       </el-form-item>
+      <el-form-item label="请求参数">
+        <el-input
+          readonly
+          size="medium"
+          type="textarea"
+          :autosize="{ minRows: 2, maxRows: 4 }"
+          v-model="dataForm.params"
+        ></el-input>
+      </el-form-item>
       <el-form-item label="时间">
         <el-input v-model="dataForm.create_time" readonly  />
       </el-form-item>
     </el-form>
+    <template #footer>
+      <el-button @click="visible = false">取消</el-button>
+      <el-button type="primary" @click="dataFormSubmitHandle">重新执行此轮任务</el-button>
+    </template>
   </el-dialog>
 </template>
 
 <script>
 import { reactive, toRefs, nextTick, ref } from 'vue'
+import { ElMessage } from 'element-plus'
 import logModel from '@/model/log-task'
+import taskModel from '@/model/task'
 
 export default {
   emits: ['refreshDataList'],
@@ -66,12 +81,33 @@ export default {
       })
     }
 
+    const dataFormSubmitHandle = () => {
+      visible.value = true
+      nextTick(async () => {
+        taskModel.reStarTirrigationTask(data.dataForm).then((result) => {
+          ElMessage({
+              message: '请求成功,请稍后查看执行结果',
+              type: 'success',
+              duration: 500,
+              onClose: () => {
+                visible.value = false
+                context.emit('refreshDataList')
+              },
+            })
+        })
+        
+      })
+    }
+
+    
+
     return {
       ...toRefs(data),
       dataFormRef,
       contentDataFormRef,
       init,
       visible,
+      dataFormSubmitHandle
     }
   },
 }

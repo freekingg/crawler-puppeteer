@@ -40,20 +40,26 @@
         <el-table-column label="轮次">
           <template #default="scope">
             <div>
-              {{scope.row.crawler_task.title}} -
-              {{scope.row.id}} {{ scope.row.extra ? '补单' : ' ' }}
+              {{scope.row.crawler_task_log.id}}
+               <!-- -
+              第{{scope.row.crawler_task_log.task_index}}轮 -->
             </div>
           </template>
         </el-table-column>
-        <!-- <el-table-column prop="task_index" label="轮次" width="70"/> -->
-        <el-table-column label="参数">
+        <el-table-column prop="crawler_task_log.create_time" label="任务时间" width="160"/>
+        <el-table-column prop="utrId" label="utrId" />
+        <el-table-column prop="vpaId" label="vpaId" />
+        <el-table-column prop="amount" label="金额" />
+        <el-table-column prop="receivedFrom" label="receivedFrom" />
+        <el-table-column prop="tradeTime" label="交易时间" />
+        <!-- <el-table-column label="扩展消息">
           <template #default="scope">
             <div>
-              {{scope.row.params}}
+              {{scope.row.extra}}
             </div>
           </template>
-        </el-table-column>
-        <el-table-column label="结果">
+        </el-table-column> -->
+        <!-- <el-table-column label="结果">
           <template #default="scope">
             <div>
               {{scope.row.result}}
@@ -65,7 +71,7 @@
             <el-tag v-if="scope.row.status == 0" size="small" type="success" >成功</el-tag>
             <el-tag size="small" type="danger" v-else  @click="addOrUpdateHandle(scope.row.id)">查看异常</el-tag>
           </template>
-        </el-table-column>
+        </el-table-column> -->
         <el-table-column prop="create_time" label="创建时间" width="160" />
       </el-table>
     </div>
@@ -90,7 +96,7 @@
 
 <script>
 import { reactive, toRefs, ref, nextTick } from 'vue'
-import taskLogModel from '@/model/log-task'
+import taskDataModel from '@/model/task-data'
 import taskModel from '@/model/task'
 import mixinViewModule from '@/common/mixin/view-module'
 import AddOrUpdate from './log-task-add-or-update.vue'
@@ -106,8 +112,8 @@ export default {
     const mixinModuleOptions = {
       getDataListIsPage: true,
       addOrUpdate,
-      getDataListModel: taskLogModel.getLogs,
-      deleteDataModel: taskLogModel.deleteLog,
+      getDataListModel: taskDataModel.getDatas,
+      deleteDataModel: taskDataModel.deleteData,
     }
 
     const {

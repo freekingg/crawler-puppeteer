@@ -2,7 +2,7 @@
 
 module.exports = {
   codeMessage: {
-    getMessage (code) {
+    getMessage(code) {
       return this[code] || '';
     },
     0: '成功',
@@ -17,7 +17,7 @@ module.exports = {
     9: '添加权限成功',
     10: '删除权限成功',
     11: '注册成功',
-    12: '新建图书成功',
+    12: '成功',
     13: '更新图书成功',
     14: '删除图书成功',
     15: '新建分组成功',

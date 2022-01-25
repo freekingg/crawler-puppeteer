@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <el-row class="container-header" justify="space-between">
-      <el-col :span="15">
+      <el-col :span="13">
         <!-- <el-form :inline="true" :model="dataForm" @keyup.enter="getDataList()">
           <el-form-item>
             <el-input v-model="dataForm.host" placeholder="请输入域名" clearable />
@@ -9,10 +9,10 @@
         </el-form> -->
       </el-col>
 
-      <el-col :span="6" class="btn-group">
+      <el-col :span="8" class="btn-group">
         <el-button-group>
           <el-button icon="el-icon-search" @click="getDataList(dataForm)">查询</el-button>
-          <el-button type="primary" icon="el-icon-plus" @click="addOrUpdateHandle">添加</el-button>
+          <el-button type="primary" icon="el-icon-plus" @click="addOrUpdateHandle">添加任务</el-button>
         </el-button-group>
       </el-col>
     </el-row>
@@ -45,16 +45,28 @@
               <el-button type="success" size="mini" @click="startHandle(scope.row.id, scope.row)">{{
                 scope.row.status == 2 ? '停止' : '开始'
               }}</el-button>
-              <el-button type="primary" size="mini" @click="addOrUpdateHandle(scope.row.id)">修改</el-button>
-              <el-button type="danger" size="mini" @click="deleteHandle(scope.row.id, scope.row)">删除</el-button>
+              <el-button
+                type="primary"
+                size="mini"
+                :disabled="scope.row.status == 2"
+                @click="addOrUpdateHandle(scope.row.id)"
+                >修改</el-button
+              >
+              <el-button
+                type="danger"
+                size="mini"
+                :disabled="scope.row.status == 2"
+                @click="deleteHandle(scope.row.id, scope.row)"
+                >删除</el-button
+              >
               <el-dropdown style="margin-left:8px" size="mini">
                 <el-button type="primary" size="mini">
                   更多<i class="el-icon-arrow-down el-icon--right"></i>
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
+                    <el-dropdown-item @click="budanHandle(scope.row.id, scope.row)">补单任务</el-dropdown-item>
                     <el-dropdown-item @click="loginHandle(scope.row.id, scope.row)">预登录</el-dropdown-item>
-                    <el-dropdown-item>运行日志</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -65,6 +77,11 @@
     </div>
     <!-- 弹窗, 新增 / 修改 -->
     <add-or-update v-if="addOrUpdateVisible" ref="addOrUpdate" @refreshDataList="getDataList(dataForm)" />
+    <add-or-update-budan
+      v-if="budanAddOrUpdateVisible"
+      ref="budanAddOrUpdate"
+      @refreshDataList="getDataList(dataForm)"
+    />
     <History v-if="historyVisible" :tableData="historyData" ref="historyAddOrUpdate" />
     <login-add-or-update
       v-if="loginAddOrUpdateVisible"
@@ -76,22 +93,25 @@
 
 <script>
 import { reactive, toRefs, ref, nextTick } from 'vue'
-import { ElLoading } from 'element-plus'
+import { ElLoading, ElMessage } from 'element-plus'
 import taskModel from '@/model/task'
 import mixinViewModule from '@/common/mixin/view-module'
 import AddOrUpdate from './task-add-or-update.vue'
+import AddOrUpdateBudan from './task-add-or-update-budan.vue'
 import LoginAddOrUpdate from './login-add-or-update.vue'
 import History from './history'
 
 export default {
   components: {
     AddOrUpdate,
+    AddOrUpdateBudan,
     LoginAddOrUpdate,
     History,
   },
   setup() {
     const addOrUpdate = ref(null)
     const loginAddOrUpdate = ref(null)
+    const budanAddOrUpdate = ref(null)
     const mixinModuleOptions = {
       getDataListIsPage: true,
       addOrUpdate,
@@ -114,6 +134,7 @@ export default {
         type: 1,
       },
       loginAddOrUpdateVisible: false,
+      budanAddOrUpdateVisible: false,
       historyVisible: false,
     })
 
@@ -133,6 +154,11 @@ export default {
           .then(result => {
             taskModel.editTask(id, { ...row, status: 2 }).then(result => {
               loading.close()
+              ElMessage({
+                message: '提交成功,请至任务日志查看结果',
+                type: 'success',
+                duration: 1000,
+              })
               getDataList(data.dataForm)
             })
           })
@@ -157,6 +183,14 @@ export default {
       }
     }
 
+    const budanHandle = id => {
+      data.budanAddOrUpdateVisible = true
+      nextTick(() => {
+        budanAddOrUpdate.value.dataForm.id = id
+        budanAddOrUpdate.value.init()
+      })
+    }
+
     const loginHandle = id => {
       data.loginAddOrUpdateVisible = true
       nextTick(() => {
@@ -169,6 +203,7 @@ export default {
       ...toRefs(data),
       getDataList,
       addOrUpdate,
+      budanAddOrUpdate,
       loginAddOrUpdate,
       addOrUpdateHandle,
       addOrUpdateVisible,
@@ -176,6 +211,7 @@ export default {
       deleteHandle,
       dataList,
       loginHandle,
+      budanHandle,
       startHandle,
     }
   },
@@ -215,7 +251,7 @@ export default {
     overflow: auto;
   }
 }
-.btn-area button{
+.btn-area button {
   margin-bottom: 4px;
 }
 </style>

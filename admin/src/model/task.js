@@ -21,15 +21,33 @@ class Task {
   async starTirrigationTask(data) {
     return _axios({
       method: 'post',
-      url: 'v1/task/start/irrigation',
+      url: 'v1/task/start/task',
       data,
     })
   }
 
+  async patchStarTirrigationTask(data) {
+    return _axios({
+      method: 'post',
+      url: 'v1/task/start/task/patch',
+      data,
+    })
+  }
+
+  async reStarTirrigationTask(data) {
+    return _axios({
+      method: 'post',
+      url: 'v1/task/start/retask',
+      data,
+    })
+  }
+
+  
+
   async stopTirrigationTask(data) {
     return _axios({
       method: 'post',
-      url: 'v1/task/stop/irrigation',
+      url: 'v1/task/stop/task',
       data,
     })
   }

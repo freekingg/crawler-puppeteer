@@ -23,9 +23,9 @@ class CrawlerTaskModel extends Model {
     return origin;
   }
 
-  static createLog(args, commit) {
+  static async createLog(args, commit) {
     const log = CrawlerTaskModel.build(args);
-    commit && log.save();
+    commit && (await log.save());
     return log;
   }
 }

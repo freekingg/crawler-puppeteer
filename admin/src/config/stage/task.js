@@ -38,9 +38,9 @@ const demoRouter = {
     {
       title: '数据列表',
       type: 'view',
-      name: 'tasklogrun',
-      route: '/task/log/run',
-      filePath: 'view/task/log-run.vue',
+      name: 'taskdata',
+      route: '/task/task/data',
+      filePath: 'view/task/task-data.vue',
       inNav: true,
       icon: 'iconfont icon-rizhiguanli',
     },
