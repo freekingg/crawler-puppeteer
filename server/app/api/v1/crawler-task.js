@@ -2,6 +2,7 @@ import { LinRouter, NotFound, disableLoading } from 'lin-mizar';
 import { groupRequired, loginRequired } from '../../middleware/jwt';
 import { TaskSearchValidator, CreateOrUpdateTaskValidator } from '../../validator/task';
 import schedule from 'node-schedule';
+import { hrtime } from 'process';
 import { PositiveIdValidator } from '../../validator/common';
 
 import { crawler } from '../../crawler';
@@ -49,7 +50,6 @@ const TaskHandle = async (implement, opt) => {
   taskJob[`task${id}`] = {};
   taskJob[`task${id}`]['count'] = 0;
   taskJob[`task${id}`]['params'] = crawler[implement]['initParams'];
-  console.log('initParams', crawler[implement]['initParams']);
 
   taskJob[`task${id}`]['timer'] = schedule.scheduleJob(`${opt.time}`, function() {
     if (taskJob[`task${id}`]['runing']) return;
@@ -60,9 +60,13 @@ const TaskHandle = async (implement, opt) => {
     let newJobTime = JSON.parse(JSON.stringify(taskJob[`task${id}`]['params']));
     taskJob[`task${id}`]['params'] = crawler[implement].getParams(newJobTime);
     opt.params = taskJob[`task${id}`]['params'];
+
+    const start = hrtime.bigint();
     Instance.start(opt)
       .then(res => {
         console.log('任务成功', res);
+        const end = hrtime.bigint();
+        let duration = end - start;
         taskJob[`task${id}`]['runing'] = false;
         let { info } = filterResult(res, implement);
 
@@ -70,6 +74,7 @@ const TaskHandle = async (implement, opt) => {
           {
             task_id: id,
             task_index: count,
+            duration,
             message: `${opt.title}: 定时任务执行成功,当前第${count}次`,
             status: 0
           },
@@ -82,6 +87,7 @@ const TaskHandle = async (implement, opt) => {
             params: JSON.stringify(taskJob[`task${id}`]['params']),
             result: JSON.stringify(info),
             status: 0,
+            duration,
             message: `${opt.title}: 定时任务执行成功,当前第${count}次`
           },
           true
@@ -95,12 +101,17 @@ const TaskHandle = async (implement, opt) => {
       })
       .catch(error => {
         console.log('任务失败', error);
+
+        const end = hrtime.bigint();
+        let duration = end - start;
+
         taskJob[`task${id}`]['runing'] = false;
         CrawlerRunModel.createLog(
           {
             task_id: id,
             task_index: count,
             status: 1,
+            duration,
             params: JSON.stringify(taskJob[`task${id}`]['params']),
             message: `${opt.title}: 定时任务执行失败,当前第${taskJob[`task${id}`]['count']}次--${error.message}`,
             errorStack: `${error.message},${error.stack},`
@@ -111,6 +122,7 @@ const TaskHandle = async (implement, opt) => {
           {
             task_id: opt.id,
             task_index: count,
+            duration,
             params: JSON.stringify(taskJob[`task${id}`]['params']),
             status: 1,
             message: `${opt.title}: 定时任务执行失败,当前第${count}次--${error.message}`,
@@ -270,13 +282,17 @@ taskApi.post('/start/task/patch', loginRequired, async ctx => {
     params: opt.extra ? JSON.parse(opt.extra) : {}
   };
   const Instance = new crawler[implement](opts);
+  const start = hrtime.bigint();
   Instance.start(opts)
     .then(async res => {
+      const end = hrtime.bigint();
+      let duration = end - start;
       let { info } = filterResult(res, implement);
 
       CrawlerRunModel.createLog(
         {
           task_id: id,
+          duration,
           message: `${opts.title}-${id} : 补单任务执行成功`,
           extra: opt.extra,
           status: 0
@@ -287,6 +303,7 @@ taskApi.post('/start/task/patch', loginRequired, async ctx => {
       CrawlerTaskModel.createLog(
         {
           task_id: id,
+          duration,
           params: JSON.stringify(opts.params),
           result: JSON.stringify(info),
           extra: opt.extra,
@@ -303,10 +320,13 @@ taskApi.post('/start/task/patch', loginRequired, async ctx => {
       });
     })
     .catch(error => {
+      const end = hrtime.bigint();
+      let duration = end - start;
       CrawlerRunModel.createLog(
         {
           task_id: id,
           status: 1,
+          duration,
           params: JSON.stringify(opts.params),
           extra: opt.extra,
           message: `${opt.title}: 补单任务执行失败: ${error.message}`,
@@ -317,6 +337,7 @@ taskApi.post('/start/task/patch', loginRequired, async ctx => {
       CrawlerTaskModel.createLog(
         {
           task_id: id,
+          duration,
           message: `${opt.title}: 补单任务执行失败: ${error.message}`,
           status: 1,
           params: JSON.stringify(opts.params),
@@ -354,13 +375,17 @@ taskApi.post('/start/retask', loginRequired, async ctx => {
   );
 
   const Instance = new crawler[implement](opts);
+  const start = hrtime.bigint();
   Instance.start(opts)
     .then(async res => {
+      const end = hrtime.bigint();
+      let duration = end - start;
       let { info } = filterResult(res, implement);
 
       CrawlerRunModel.createLog(
         {
           task_id: crawler_task.id,
+          duration,
           task_index: opt.task_index,
           message: `${crawler_task.title}-${id} : 异常任务重新执行成功了`,
           status: 0
@@ -373,6 +398,7 @@ taskApi.post('/start/retask', loginRequired, async ctx => {
           task_id: crawler_task.id,
           result: JSON.stringify(info),
           status: 0,
+          duration,
           message: `${crawler_task.title}-${id} : 异常任务重新执行成功了`
         },
         opt.id
@@ -386,10 +412,13 @@ taskApi.post('/start/retask', loginRequired, async ctx => {
     })
     .catch(error => {
       console.log('任务失败', error);
+      const end = hrtime.bigint();
+      let duration = end - start;
       CrawlerRunModel.createLog(
         {
           task_id: crawler_task.id,
           task_index: opt.task_index,
+          duration,
           message: `${crawler_task.title}-${opt.id}: 异常任务重新执行还是失败,${error.message}`,
           status: 1
         },

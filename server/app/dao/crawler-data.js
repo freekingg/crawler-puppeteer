@@ -23,6 +23,7 @@ class CrawlerDataDao {
     const page = v.get('query.page');
     const limit = v.get('query.count');
     v.get('query.crawlerTaskId') && set(condition, 'crawlerTaskId', v.get('query.crawlerTaskId'));
+    v.get('query.utrId') && set(condition, 'utrId', v.get('query.utrId'));
     const { rows, count } = await Modals.findAndCountAll({
       where: Object.assign({}, condition),
       include: [
@@ -31,7 +32,7 @@ class CrawlerDataDao {
           as: 'crawler_task_log'
         }
       ],
-      order: [['create_time', 'DESC']],
+      order: [['update_time', 'DESC']],
       offset: page * limit,
       limit: limit
     });
@@ -48,8 +49,9 @@ class CrawlerDataDao {
       }
     });
     if (item) {
-      console.log('已存在');
+      console.log(`${item.id}数据已存在，直接更新本条数据`);
       this.updateItem(item, body);
+      return;
     }
     const bk = new Modals();
     bk.receivedFrom = body.receivedFrom;

@@ -4,26 +4,10 @@
       <el-col :span="15">
         <el-form :inline="true" :model="dataForm" @keyup.enter="getDataList()">
           <el-form-item>
-            <el-select v-model="dataForm.task_id" class="m-2" placeholder="任务名称" clearable>
-              <el-option
-                v-for="item in tasks"
-                :key="item.id"
-                :label="item.title"
-                :value="item.id"
-              >
-              </el-option>
-           </el-select>
+            <el-input v-model="dataForm.crawlerTaskId" clearable  placeholder="请输入任务编号" />
           </el-form-item>
           <el-form-item>
-            <el-select v-model="dataForm.status" class="m-2" placeholder="运行状态" clearable>
-              <el-option
-                v-for="item in status"
-                :key="item.status"
-                :label="item.title"
-                :value="item.status"
-              >
-              </el-option>
-           </el-select>
+            <el-input v-model="dataForm.utrId" clearable placeholder="请输入utr" />
           </el-form-item>
         </el-form>
       </el-col>
@@ -37,12 +21,10 @@
 
     <div class="wrap" style="height:70vh;overflow:auto">
       <el-table size="mini" v-loading="dataListLoading" :data="dataList" border>
-        <el-table-column label="轮次">
+        <el-table-column label="任务编号" width="80">
           <template #default="scope">
             <div>
               {{scope.row.crawler_task_log.id}}
-               <!-- -
-              第{{scope.row.crawler_task_log.task_index}}轮 -->
             </div>
           </template>
         </el-table-column>
@@ -51,7 +33,7 @@
         <el-table-column prop="vpaId" label="vpaId" />
         <el-table-column prop="amount" label="金额" />
         <el-table-column prop="receivedFrom" label="receivedFrom" />
-        <el-table-column prop="tradeTime" label="交易时间" />
+        <el-table-column prop="tradeTime" label="交易时间" width="160"/>
         <!-- <el-table-column label="扩展消息">
           <template #default="scope">
             <div>
@@ -73,6 +55,14 @@
           </template>
         </el-table-column> -->
         <el-table-column prop="create_time" label="创建时间" width="160" />
+        <el-table-column label="抓取延时">
+          <template #default="scope">
+            <div>
+              {{diffTime(scope.row.create_time,scope.row.tradeTime)}}秒
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="update_time" label="更新时间" width="160" />
       </el-table>
     </div>
     <!-- 分页 -->
@@ -161,6 +151,13 @@ export default {
 
     initMixinViewModuleOptions(mixinModuleOptions, data.dataForm)
 
+    const diffTime = (t1,t2) =>{
+      if(!t1 || !t2){
+        return '-'
+      }
+      return new Date(t1).getTime()/1000 - new Date(t2).getTime()/1000
+    }
+
     return {
       ...toRefs(data),
       getDataList,
@@ -169,6 +166,7 @@ export default {
       addOrUpdateHandle,
       addOrUpdateVisible,
       dataListLoading,
+      diffTime,
       deleteHandle,
       dataList,
       total,

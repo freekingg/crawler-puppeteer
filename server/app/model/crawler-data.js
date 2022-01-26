@@ -16,8 +16,9 @@ class CrawlerData extends Model {
       crawlerTaskId: this.crawlerTaskId,
       tradeTime: this.tradeTime,
       extra: this.extra,
+      crawler_task_log: this.crawler_task_log,
       create_time: this.create_time,
-      crawler_task_log: this.crawler_task_log
+      update_time: this.update_time
     };
     return origin;
   }

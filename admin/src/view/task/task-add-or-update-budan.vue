@@ -8,13 +8,27 @@
       label-width="120px"
     >
       <el-form-item prop="extra" label="补单参数">
-        <el-input
-          size="medium"
-          type="textarea"
-          :autosize="{ minRows: 4, maxRows: 6 }"
-          placeholder='请输入参数-格式： {"startTime":"2022-01-25 19:31:34","endTime":"2022-01-25 19:32:34"}'
-          v-model="dataForm.extra"
-        ></el-input>
+        <div style="display:flex">
+          <el-input
+            size="medium"
+            type="textarea"
+            :autosize="{ minRows: 4, maxRows: 6 }"
+            placeholder='请输入参数-格式： {"startTime":"2022-01-25 19:31:00","endTime":"2022-01-25 19:32:00"} 不支持秒数设置'
+            v-model="dataForm.extra"
+          ></el-input>
+          <el-popover title="格式,不支持秒数设置" :width="450" trigger="hover">
+            <div>
+              <p>
+                {"startTime":"2022-01-25 19:31:00","endTime":"2022-01-25 19:32:00"}
+              </p>
+            </div>
+            <template #reference>
+              <el-icon class="el-input__icon" style="width:30px">
+                <i class="el-icon-info"></i>
+              </el-icon>
+            </template>
+          </el-popover>
+        </div>
       </el-form-item>
       <el-form-item prop="title" label="任务名称">
         <el-input v-model="dataForm.title" disabled placeholder="请输入任务名称" />
@@ -124,9 +138,9 @@ export default {
               type: 'error',
               duration: 1000,
             })
-           return
+            return
           }
-         
+
           try {
             data.loading = true
             await taskModel.patchStarTirrigationTask(data.dataForm)

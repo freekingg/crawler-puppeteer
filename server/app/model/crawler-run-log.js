@@ -15,6 +15,7 @@ class CrawlerRunModel extends Model {
       status: this.status,
       errorStack: this.errorStack,
       extra: this.extra,
+      duration: this.duration,
       crawler_task: this.crawler_task
     };
     return origin;
@@ -44,6 +45,10 @@ CrawlerRunModel.init(
     },
     message: {
       type: Sequelize.TEXT('long')
+    },
+    duration: {
+      type: Sequelize.STRING(50),
+      allowNull: true
     },
     errorStack: {
       type: Sequelize.TEXT('long')

@@ -55,6 +55,7 @@ class CrawlerTaskLogDao {
     item.task_index = body.task_index;
     item.params = body.params;
     item.result = body.result;
+    item.duration = body.duration;
     item.status = body.status;
     item.message = body.message;
     await item.save();

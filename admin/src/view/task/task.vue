@@ -59,7 +59,7 @@
                 @click="deleteHandle(scope.row.id, scope.row)"
                 >删除</el-button
               >
-              <el-dropdown style="margin-left:8px" size="mini">
+              <el-dropdown style="margin-left:8px">
                 <el-button type="primary" size="mini">
                   更多<i class="el-icon-arrow-down el-icon--right"></i>
                 </el-button>

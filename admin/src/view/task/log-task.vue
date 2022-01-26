@@ -37,7 +37,7 @@
 
     <div class="wrap" style="height:70vh;overflow:auto">
       <el-table size="mini" v-loading="dataListLoading" :data="dataList" border>
-        <el-table-column label="轮次">
+        <el-table-column label="任务编号">
           <template #default="scope">
             <div>
               {{scope.row.crawler_task.title}} -
@@ -62,11 +62,18 @@
         </el-table-column>
         <el-table-column label="状态" width="120">
           <template #default="scope">
-            <el-tag v-if="scope.row.status == 0" size="small" type="success" >成功</el-tag>
+            <el-tag v-if="scope.row.status == 0" size="small" type="success" @click="addOrUpdateHandle(scope.row.id)">成功</el-tag>
             <el-tag size="small" type="danger" v-else  @click="addOrUpdateHandle(scope.row.id)">查看异常</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="create_time" label="创建时间" width="160" />
+        <el-table-column label="耗时" width="120">
+          <template #default="scope">
+            <div>
+              {{(scope.row.duration / 1000 /1000 / 1000).toFixed(2)}} s
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="create_time" label="任务时间" width="160" />
       </el-table>
     </div>
     <!-- 分页 -->

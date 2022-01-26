@@ -48,8 +48,8 @@ let launchOptions = {
 class PuppeteerBharatpe {
   static getParams(newJobTime = {}) {
     let time = {
-      startTime: dayjs(newJobTime['endTime']).format('YYYY-MM-DD HH:mm:ss'),
-      endTime: dayjs(newJobTime['endTime'])
+      startTime: dayjs(newJobTime['endTime']).set('second', 0).format('YYYY-MM-DD HH:mm:ss'),
+      endTime: dayjs(newJobTime['endTime']).set('second', 0)
         .add(1, 'minute')
         .format('YYYY-MM-DD HH:mm:ss')
     };
@@ -166,8 +166,8 @@ class PuppeteerBharatpe {
 }
 
 PuppeteerBharatpe.initParams = {
-  startTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
-  endTime: dayjs()
+  startTime: dayjs().set('second', 0).format('YYYY-MM-DD HH:mm:ss'),
+  endTime: dayjs().set('second', 0)
     .add(1, 'minute')
     .format('YYYY-MM-DD HH:mm:ss')
 };

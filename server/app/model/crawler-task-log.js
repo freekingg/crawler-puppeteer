@@ -14,6 +14,7 @@ class CrawlerTaskModel extends Model {
       params: this.params,
       result: this.result,
       index: this.index,
+      duration: this.duration,
       create_time: this.create_time,
       status: this.status,
       errorStack: this.errorStack,
@@ -53,6 +54,10 @@ CrawlerTaskModel.init(
     },
     params: {
       type: Sequelize.STRING(1000),
+      allowNull: true
+    },
+    duration: {
+      type: Sequelize.STRING(50),
       allowNull: true
     },
     result: {

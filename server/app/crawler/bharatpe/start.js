@@ -31,9 +31,6 @@ export default async function(browser, opts) {
     let { cookie } = _authData;
     await page.setCookie(...cookie);
 
-    // 商户ID
-    // let merchant_id = null;
-
     // 刷新页面，验证登录状态
     await page.reload({ waitUntil: 'networkidle2' });
     await page.waitFor(1000);
@@ -68,7 +65,7 @@ export default async function(browser, opts) {
     let targetAmStart = splitDateStart[4];
     let targetMonthValueStart = [splitDateStart[0], splitDateStart[2]].join(' ');
 
-    let localDateEnd = dayjs(params.startTime).format('MMM D YYYY h:mm A');
+    let localDateEnd = dayjs(params.endTime).format('MMM D YYYY h:mm A');
     let splitDateEnd = localDateEnd.split(' ');
     let targetDayEnd = dayjs(localDateEnd).date();
     let targetHourEnd = dayjs(localDateEnd).hour();
@@ -206,10 +203,13 @@ export default async function(browser, opts) {
       };
 
       let getAllHistoryHandle = new Promise(getAllHistory);
+
+      await page.waitForTimeout(500);
       // 全部选择完成 点击确认进行查询
       await page.click('.end_time .time-select-btn');
       await page.click('.daterangepicker .date-select-btn');
       let result = await getAllHistoryHandle;
+      console.log('result: ', result);
       await page.close();
       return result;
     } else {
