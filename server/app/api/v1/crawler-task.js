@@ -49,6 +49,7 @@ const TaskHandle = async (implement, opt) => {
 
   taskJob[`task${id}`] = {};
   taskJob[`task${id}`]['count'] = 0;
+  taskJob[`task${id}`]['implement'] = Instance;
   taskJob[`task${id}`]['params'] = crawler[implement]['initParams'];
 
   taskJob[`task${id}`]['timer'] = schedule.scheduleJob(`${opt.time}`, function() {
@@ -271,7 +272,7 @@ taskApi.post('/start/task/patch', loginRequired, async ctx => {
   CrawlerRunModel.createLog(
     {
       task_id: id,
-      message: `${opt.title} 补单任务启动了,参数 ${opt.extra}`,
+      message: `${opt.title} 补单任务启动了,参数 ${opt.extra.budanParams}`,
       status: 0
     },
     true
@@ -279,7 +280,7 @@ taskApi.post('/start/task/patch', loginRequired, async ctx => {
 
   let opts = {
     ...opt,
-    params: opt.extra ? JSON.parse(opt.extra) : {}
+    params: opt.extra ? JSON.parse(opt.extra).budanParams : {}
   };
   const Instance = new crawler[implement](opts);
   const start = hrtime.bigint();
@@ -288,6 +289,9 @@ taskApi.post('/start/task/patch', loginRequired, async ctx => {
       const end = hrtime.bigint();
       let duration = end - start;
       let { info } = filterResult(res, implement);
+
+      // 任务执行完成，关闭实例
+      Instance.close();
 
       CrawlerRunModel.createLog(
         {
@@ -404,6 +408,9 @@ taskApi.post('/start/retask', loginRequired, async ctx => {
         opt.id
       );
 
+      // 任务执行完成，关闭实例
+      Instance.close();
+
       let crawlerTaskId = opt.id;
       let { list } = filterResult(res, implement, crawlerTaskId);
       for (const iterator of list) {
@@ -441,7 +448,7 @@ taskApi.post('/stop/task', async ctx => {
     taskJob[`task${id}`]['timer'].cancel();
     taskJob[`task${id}`]['runing'] = false;
   }
-
+  taskJob[`task${id}`]['implement'].close();
   CrawlerRunModel.createLog(
     {
       task_id: id,

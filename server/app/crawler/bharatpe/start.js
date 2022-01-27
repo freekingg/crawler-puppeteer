@@ -1,62 +1,13 @@
-import { isEmptyObject } from '../../lib/util';
-import { getLocalStorage, getCookie } from '../../lib/tg-util';
-import { TaskDao } from '../../dao/crawler-task';
+
 import dayjs from 'dayjs';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 dayjs.extend(localizedFormat);
-const TaskDto = new TaskDao();
+
 export default async function(browser, opts) {
-  let { authData, params } = opts;
-  const page = await browser.newPage();
-  // 添加headers
-  const headers = {
-    'Accept-Encoding': 'gzip' // 使用gzip压缩让数据传输更快
-  };
+  const page = browser;
   try {
-    // 设置headers
-    await page.setExtraHTTPHeaders(headers);
-    await page.goto(opts.url, { waitUntil: 'networkidle2' });
-
-    // 设置authData 为登录状态
-    let _authData = isEmptyObject(authData);
-    await page.evaluate(authDatas => {
-      let { localStorageData } = authDatas;
-      if (localStorageData) {
-        Object.keys(localStorageData).forEach(function(key) {
-          localStorage.setItem(key, localStorageData[key]);
-        });
-      }
-    }, _authData);
-
-    let { cookie } = _authData;
-    await page.setCookie(...cookie);
-
-    // 刷新页面，验证登录状态
-    await page.reload({ waitUntil: 'networkidle2' });
-    await page.waitFor(1000);
-
-    // 刷新后，不相等则表示没有登录
-    if (page.url() !== opts.url) {
-      console.log('需要重新登录一次');
-      await page.waitFor('input#username', { visible: true });
-      await page.waitFor('input#password', { visible: true });
-      await page.type('input#username', opts.account);
-      await page.type('input#password', opts.pwd);
-      await Promise.all([page.waitForNavigation(), page.click('#signIn .continue-btn')]);
-      let localStorage = await getLocalStorage(page);
-      let cookie = await getCookie(page);
-      let authData = {
-        localStorage,
-        cookie
-      };
-      _authData = isEmptyObject(JSON.stringify(authData));
-      await TaskDto.updateTaskAuthData({ authData }, opts.id);
-    }
-
-    // page.on('console', msg => console.log('PAGE LOG:', msg.text()));
-
+    let { params } = opts;
     // 设置参数 2022-01-20 07:30:00  2022-01-20 07:60:00
-
     let localDateStart = dayjs(params.startTime).format('MMM D YYYY h:mm A');
     let splitDateStart = localDateStart.split(' ');
     let targetDayStart = dayjs(localDateStart).date();
@@ -67,11 +18,9 @@ export default async function(browser, opts) {
 
     let localDateEnd = dayjs(params.endTime).format('MMM D YYYY h:mm A');
     let splitDateEnd = localDateEnd.split(' ');
-    let targetDayEnd = dayjs(localDateEnd).date();
     let targetHourEnd = dayjs(localDateEnd).hour();
     let targetMinuteEnd = dayjs(localDateEnd).minute();
     let targetAmEnd = splitDateEnd[4];
-    let targetMonthValueEnd = [splitDateEnd[0], splitDateEnd[2]].join(' ');
 
     // 打开日期选择器
     await page.waitFor('.datePicker', { visible: true });
@@ -135,11 +84,11 @@ export default async function(browser, opts) {
       let clickCountMinute = Array(Math.abs(diffMinuteStart)).fill();
       if (diffMinuteStart < 0) {
         for (const iterator of clickCountMinute) {
-          await upCartsStart[1].click({ delay: 50 });
+          await upCartsStart[1].click({ delay: 10 });
         }
       } else {
         for (const iterator of clickCountMinute) {
-          await downCartsStart[1].click({ delay: 50 });
+          await downCartsStart[1].click({ delay: 10 });
         }
       }
 
@@ -176,11 +125,11 @@ export default async function(browser, opts) {
       let clickCountMinuteEnd = Array(Math.abs(diffMinuteEnd)).fill();
       if (diffMinuteEnd < 0) {
         for (const iterator of clickCountMinuteEnd) {
-          await downCartsEnd[1].click({ delay: 50 });
+          await downCartsEnd[1].click({ delay: 10 });
         }
       } else {
         for (const iterator of clickCountMinuteEnd) {
-          await downCartsEnd[1].click({ delay: 50 });
+          await downCartsEnd[1].click({ delay: 10 });
         }
       }
 
@@ -209,8 +158,7 @@ export default async function(browser, opts) {
       await page.click('.end_time .time-select-btn');
       await page.click('.daterangepicker .date-select-btn');
       let result = await getAllHistoryHandle;
-      console.log('result: ', result);
-      await page.close();
+      // await page.close();
       return result;
     } else {
       return Promise.reject(new Error('日期格式有误'));

@@ -13,13 +13,13 @@
             size="medium"
             type="textarea"
             :autosize="{ minRows: 4, maxRows: 6 }"
-            placeholder='请输入参数-格式： {"startTime":"2022-01-25 19:31:00","endTime":"2022-01-25 19:32:00"} 不支持秒数设置'
+            placeholder='请输入参数-格式： {"budanParams":{"startTime":"2022-01-25 19:31:00","endTime":"2022-01-25 19:32:00"}} 不支持秒数设置'
             v-model="dataForm.extra"
           ></el-input>
           <el-popover title="格式,不支持秒数设置" :width="450" trigger="hover">
             <div>
               <p>
-                {"startTime":"2022-01-25 19:31:00","endTime":"2022-01-25 19:32:00"}
+                {"budanParams":{"startTime":"2022-01-25 19:31:00","endTime":"2022-01-25 19:32:00"}}
               </p>
             </div>
             <template #reference>
@@ -132,7 +132,7 @@ export default {
         }
         if (data.dataForm.id) {
           let params = JSON.parse(data.dataForm.extra)
-          if (!params || !params.startTime || !params.endTime) {
+          if (!params || !params.budanParams.startTime || !params.budanParams.endTime) {
             ElMessage({
               message: '补单参数有误',
               type: 'error',
