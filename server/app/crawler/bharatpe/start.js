@@ -125,7 +125,7 @@ export default async function(browser, opts) {
       let clickCountMinuteEnd = Array(Math.abs(diffMinuteEnd)).fill();
       if (diffMinuteEnd < 0) {
         for (const iterator of clickCountMinuteEnd) {
-          await downCartsEnd[1].click({ delay: 10 });
+          await upCartsEnd[1].click({ delay: 10 });
         }
       } else {
         for (const iterator of clickCountMinuteEnd) {

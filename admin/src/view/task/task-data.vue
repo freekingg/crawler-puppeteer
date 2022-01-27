@@ -21,9 +21,10 @@
 
     <div class="wrap" style="height:70vh;overflow:auto">
       <el-table size="mini" v-loading="dataListLoading" :data="dataList" border>
-        <el-table-column label="任务编号" width="80">
+        <el-table-column label="任务编号">
           <template #default="scope">
             <div>
+              {{scope.row.crawler_task_log.crawler_task.title}} -
               {{scope.row.crawler_task_log.id}}
             </div>
           </template>

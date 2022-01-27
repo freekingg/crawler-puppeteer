@@ -57,8 +57,9 @@ class PuppeteerBharatpe {
     let time = {
       startTime: dayjs(newJobTime['endTime'])
         .set('second', 0)
+        .subtract(1, 'minute')
         .format('YYYY-MM-DD HH:mm:ss'),
-      endTime: dayjs(newJobTime['endTime'])
+      endTime: dayjs()
         .set('second', 0)
         .add(1, 'minute')
         .format('YYYY-MM-DD HH:mm:ss')
@@ -245,10 +246,10 @@ class PuppeteerBharatpe {
 PuppeteerBharatpe.initParams = {
   startTime: dayjs()
     .set('second', 0)
+    .subtract(1, 'minute')
     .format('YYYY-MM-DD HH:mm:ss'),
   endTime: dayjs()
     .set('second', 0)
-    .add(1, 'minute')
     .format('YYYY-MM-DD HH:mm:ss')
 };
 export { PuppeteerBharatpe };

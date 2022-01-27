@@ -324,6 +324,8 @@ taskApi.post('/start/task/patch', loginRequired, async ctx => {
       });
     })
     .catch(error => {
+      // 任务执行完成，关闭实例
+      Instance.close();
       const end = hrtime.bigint();
       let duration = end - start;
       CrawlerRunModel.createLog(
@@ -431,6 +433,8 @@ taskApi.post('/start/retask', loginRequired, async ctx => {
         },
         true
       );
+      // 任务执行完成，关闭实例
+      Instance.close();
     });
   ctx.success({
     code: 12

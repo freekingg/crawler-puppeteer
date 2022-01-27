@@ -13,7 +13,8 @@ class CrawlerTaskLogDao {
       include: [
         {
           model: CrawlerTask,
-          as: 'crawler_task'
+          as: 'crawler_task',
+          attributes: ['id'],
         }
       ]
     });
@@ -31,7 +32,8 @@ class CrawlerTaskLogDao {
       include: [
         {
           model: CrawlerTask,
-          as: 'crawler_task'
+          // as: 'crawler_task',
+          // attributes: ['id'],
         }
       ],
       order: [['create_time', 'DESC']],

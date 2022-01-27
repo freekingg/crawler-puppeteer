@@ -1,6 +1,7 @@
 import { set } from 'lodash';
 import { CrawlerData as Modals } from '../model/crawler-data';
 import { CrawlerTaskModel } from '../model/crawler-task-log';
+import { CrawlerTask } from '../model/crawler-task';
 
 class CrawlerDataDao {
   async getItem(id) {
@@ -29,7 +30,11 @@ class CrawlerDataDao {
       include: [
         {
           model: CrawlerTaskModel,
-          as: 'crawler_task_log'
+          as: 'crawler_task_log',
+          include: {
+            model: CrawlerTask,
+            attributes: ['title']
+          }
         }
       ],
       order: [['update_time', 'DESC']],
