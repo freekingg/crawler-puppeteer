@@ -13,7 +13,7 @@ import start from './start';
 
 const TaskDto = new TaskDao();
 
-puppeteer.use(StealthPlugin());
+// puppeteer.use(StealthPlugin());
 
 let launchOptions = {
   headless: false,

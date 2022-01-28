@@ -1,6 +1,11 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { CrawlerRunModel } from '../../model/crawler-run-log';
+import dayjs from 'dayjs';
+
+import { isEmptyObject } from '../../lib/util';
+import { getLocalStorage, getCookie } from '../../lib/tg-util';
+
+import { TaskDao } from '../../dao/crawler-task';
 
 import checkIp from '../../lib/checkIp';
 import signin from './signin';
@@ -46,9 +51,24 @@ let launchOptions = {
  * @param {Object} [opts.puppeteer] - Puppeteer [launch options](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions)
  */
 class PuppeteerTest {
+  static getParams(newJobTime = {}) {
+    let time = {
+      startTime: dayjs(newJobTime['endTime'])
+        .set('second', 0)
+        .subtract(1, 'minute')
+        .format('YYYY-MM-DD HH:mm:ss'),
+      endTime: dayjs()
+        .set('second', 0)
+        .add(1, 'minute')
+        .format('YYYY-MM-DD HH:mm:ss')
+    };
+    return time;
+  }
+
   constructor(opts = {}) {
     this._opts = opts;
     this.launchOptions = launchOptions;
+    this.page = null;
   }
 
   /**
@@ -122,7 +142,70 @@ class PuppeteerTest {
     } catch (error) {
       return Promise.reject(error);
     }
+    this.close();
     return authData;
+  }
+
+  /**
+   * 开始执行任务
+   *
+   * @param {string} repo - GitHub repository identifier
+   * @return {Promise}
+   *
+   */
+  async preStart(opts = {}) {
+    let { authData } = opts;
+    try {
+      const browser = await this.browser();
+      const page = await browser.newPage();
+      // 添加headers
+      const headers = {
+        'Accept-Encoding': 'gzip' // 使用gzip压缩让数据传输更快
+      };
+      // 设置headers
+      await page.setExtraHTTPHeaders(headers);
+      await page.goto(opts.url, { waitUntil: 'networkidle2' });
+
+      // 设置authData 为登录状态
+      let _authData = isEmptyObject(authData);
+      await page.evaluate(authDatas => {
+        let { localStorageData } = authDatas;
+        if (localStorageData) {
+          Object.keys(localStorageData).forEach(function(key) {
+            localStorage.setItem(key, localStorageData[key]);
+          });
+        }
+      }, _authData);
+
+      let { cookie } = _authData;
+      await page.setCookie(...cookie);
+
+      // 刷新页面，验证登录状态
+      await page.reload({ waitUntil: 'networkidle2' });
+      await page.waitFor(1000);
+
+      // 刷新后，不相等则表示没有登录
+      if (page.url() !== opts.url) {
+        console.log('需要重新登录一次');
+        await page.waitFor('input#username', { visible: true });
+        await page.waitFor('input#password', { visible: true });
+        await page.type('input#username', opts.account);
+        await page.type('input#password', opts.pwd);
+        await Promise.all([page.waitForNavigation(), page.click('#signIn .continue-btn')]);
+        let localStorage = await getLocalStorage(page);
+        let cookie = await getCookie(page);
+        let authData = {
+          localStorage,
+          cookie
+        };
+        _authData = isEmptyObject(JSON.stringify(authData));
+        await TaskDto.updateTaskAuthData({ authData }, opts.id);
+      }
+      this.page = page;
+      return this.page;
+    } catch (error) {
+      return Promise.reject(error);
+    }
   }
 
   /**
@@ -135,9 +218,12 @@ class PuppeteerTest {
   async start(opts = {}) {
     let res = {};
     try {
-      const browser = await this.browser();
-      res = await start(browser, opts);
+      if (!this.page) {
+        this.page = await this.preStart(opts);
+      }
+      res = await start(this.page, opts);
     } catch (error) {
+      this.page = null;
       return Promise.reject(error);
     }
     return res;
@@ -154,4 +240,14 @@ class PuppeteerTest {
     this._browser = null;
   }
 }
+
+PuppeteerTest.initParams = {
+  startTime: dayjs()
+    .set('second', 0)
+    .subtract(1, 'minute')
+    .format('YYYY-MM-DD HH:mm:ss'),
+  endTime: dayjs()
+    .set('second', 0)
+    .format('YYYY-MM-DD HH:mm:ss')
+};
 export { PuppeteerTest };
