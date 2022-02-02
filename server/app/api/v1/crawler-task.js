@@ -8,7 +8,6 @@ import { PositiveIdValidator } from '../../validator/common';
 import { crawler } from '../../crawler';
 
 import { getSafeParamId } from '../../lib/util';
-import { filterResult } from './filterData';
 import { TaskDao } from '../../dao/crawler-task';
 
 import { CrawlerRunModel } from '../../model/crawler-run-log';
@@ -69,7 +68,7 @@ const TaskHandle = async (implement, opt) => {
         const end = hrtime.bigint();
         let duration = end - start;
         taskJob[`task${id}`]['runing'] = false;
-        let { info } = filterResult(res, implement);
+        let { info } = Instance.filterResult(res, implement);
 
         CrawlerRunModel.createLog(
           {
@@ -94,7 +93,7 @@ const TaskHandle = async (implement, opt) => {
           true
         ).then(async result => {
           let crawlerTaskId = result.id;
-          let { list } = filterResult(res, implement, crawlerTaskId);
+          let { list } = Instance.filterResult(res, implement, crawlerTaskId);
           for (const iterator of list) {
             await CrawlerDataDto.createItem(iterator);
           }
@@ -288,7 +287,7 @@ taskApi.post('/start/task/patch', loginRequired, async ctx => {
     .then(async res => {
       const end = hrtime.bigint();
       let duration = end - start;
-      let { info } = filterResult(res, implement);
+      let { info } = Instance.filterResult(res, implement);
 
       // 任务执行完成，关闭实例
       Instance.close();
@@ -317,7 +316,7 @@ taskApi.post('/start/task/patch', loginRequired, async ctx => {
         true
       ).then(async result => {
         let crawlerTaskId = result.id;
-        let { list } = filterResult(res, implement, crawlerTaskId);
+        let { list } = Instance.filterResult(res, implement, crawlerTaskId);
         for (const iterator of list) {
           await CrawlerDataDto.createItem(iterator);
         }
@@ -386,7 +385,7 @@ taskApi.post('/start/retask', loginRequired, async ctx => {
     .then(async res => {
       const end = hrtime.bigint();
       let duration = end - start;
-      let { info } = filterResult(res, implement);
+      let { info } = Instance.filterResult(res, implement);
 
       CrawlerRunModel.createLog(
         {
@@ -414,7 +413,7 @@ taskApi.post('/start/retask', loginRequired, async ctx => {
       Instance.close();
 
       let crawlerTaskId = opt.id;
-      let { list } = filterResult(res, implement, crawlerTaskId);
+      let { list } = Instance.filterResult(res, implement, crawlerTaskId);
       for (const iterator of list) {
         await CrawlerDataDto.createItem(iterator);
       }

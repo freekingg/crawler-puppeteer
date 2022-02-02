@@ -14,7 +14,7 @@ import start from './start';
 puppeteer.use(StealthPlugin());
 
 let launchOptions = {
-  headless: false,
+  headless: true,
   timeout: 60000,
   ignoreHTTPSErrors: true, // 忽略证书错误
   args: [
@@ -97,8 +97,7 @@ class PuppeteerTest {
   async browser() {
     if (!this._browser) {
       let launchOptions = {
-        headless: false,
-        ...this._opts.puppeteer
+        ...this.launchOptions
       };
 
       // 设置代理
@@ -238,6 +237,37 @@ class PuppeteerTest {
     const browser = await this.browser();
     await browser.close();
     this._browser = null;
+  }
+
+  /**
+   * 过滤结果
+   * @params {Object} Object.result 返回的响应数据  Object.crawlerTaskId 任务id
+   * @return {Object} Object.info 扩展信息  Object.data 返回的列表数据
+   */
+
+  filterResult(result, crawlerTaskId = '') {
+    console.log('result', result);
+    let data = result.data.txns.map(item => {
+      return {
+        receivedFrom: item.received_from,
+        utrId: item.utr,
+        vpaId: item.vpa,
+        orderId: item.order_id,
+        amount: item.amount,
+        crawlerTaskId: crawlerTaskId,
+        tradeTime: item.txn_date,
+        extra: JSON.stringify({ txn_id: item.txn_id, txn_type: item.txn_type, merchant_id: item.merchant_id })
+      };
+    });
+    return {
+      data: data || [],
+      info: {
+        total: result.data.total.txns,
+        amount: result.data.total.net_settlement_amount,
+        txn_date: result.data.total.txn_date,
+        txn_date_end: result.data.total.txn_date_end
+      }
+    };
   }
 }
 
