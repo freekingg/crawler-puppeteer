@@ -12,7 +12,7 @@ import { TaskDao } from '../../dao/crawler-task';
 
 import { CrawlerRunModel } from '../../model/crawler-run-log';
 import { CrawlerTaskModel } from '../../model/crawler-task-log';
-import { CrawlerDataDao } from '../../dao/crawler-data';
+
 import { CrawlerTaskLogDao } from '../../dao/crawler-task-log';
 
 import dayjs from 'dayjs';
@@ -27,7 +27,6 @@ const taskApi = new LinRouter({
 let taskJob = {};
 
 const TaskDto = new TaskDao();
-const CrawlerDataDto = new CrawlerDataDao();
 const CrawlerTaskLogDto = new CrawlerTaskLogDao();
 
 const TaskHandle = async (implement, opt) => {
@@ -95,7 +94,7 @@ const TaskHandle = async (implement, opt) => {
           let crawlerTaskId = result.id;
           let { list } = Instance.filterResult(res, implement, crawlerTaskId);
           for (const iterator of list) {
-            await CrawlerDataDto.createItem(iterator);
+            await Instance.createItem(iterator);
           }
         });
       })
@@ -318,7 +317,7 @@ taskApi.post('/start/task/patch', loginRequired, async ctx => {
         let crawlerTaskId = result.id;
         let { list } = Instance.filterResult(res, implement, crawlerTaskId);
         for (const iterator of list) {
-          await CrawlerDataDto.createItem(iterator);
+          await Instance.createItem(iterator);
         }
       });
     })
@@ -415,7 +414,7 @@ taskApi.post('/start/retask', loginRequired, async ctx => {
       let crawlerTaskId = opt.id;
       let { list } = Instance.filterResult(res, implement, crawlerTaskId);
       for (const iterator of list) {
-        await CrawlerDataDto.createItem(iterator);
+        await Instance.createItem(iterator);
       }
     })
     .catch(error => {

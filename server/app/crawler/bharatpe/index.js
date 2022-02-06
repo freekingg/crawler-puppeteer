@@ -6,12 +6,14 @@ import { isEmptyObject } from '../../lib/util';
 import { getLocalStorage, getCookie } from '../../lib/tg-util';
 
 import { TaskDao } from '../../dao/crawler-task';
+import { CrawlerDataDao } from '../../dao/crawler-data';
 
 import checkIp from '../../lib/checkIp';
 import signin from './signin';
 import start from './start';
 
 const TaskDto = new TaskDao();
+const CrawlerDataDto = new CrawlerDataDao();
 
 puppeteer.use(StealthPlugin());
 
@@ -242,6 +244,15 @@ class PuppeteerBharatpe {
   }
 
   /**
+   * 保存数据至数据库
+   *
+   * @return {Promise}
+   */
+  async createItem(item) {
+    return CrawlerDataDto.createItem(item);
+  }
+
+  /**
    * 过滤结果
    * @params {Object} Object.result 返回的响应数据  Object.crawlerTaskId 任务id
    * @return {Object} Object.info 扩展信息  Object.data 返回的列表数据
@@ -262,7 +273,7 @@ class PuppeteerBharatpe {
       };
     });
     return {
-      data: data || [],
+      list: data || [],
       info: {
         total: result.data.total.txns,
         amount: result.data.total.net_settlement_amount,

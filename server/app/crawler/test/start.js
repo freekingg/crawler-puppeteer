@@ -3,15 +3,22 @@ export default async function(browser, opts) {
   const page = browser;
   // 添加headers
   const headers = {
-    'Accept-Encoding': 'gzip' // 使用gzip压缩让数据传输更快
+    'Accept-Encoding': 'gzip'
   };
 
   // 设置headers
   await page.setExtraHTTPHeaders(headers);
   await page.goto(opts.url);
-  // await page.close();
-  await page.waitForTimeout(6000);
+
+  await page.waitFor('#login_username', { visible: true });
+  await page.waitFor('#login_password', { visible: true });
+  await page.type('#login_username', opts.account);
+  await page.type('#login_password', opts.pwd);
+
+  await page.click('#login-button')
+  await page.waitForTimeout(10000);
   await page.screenshot({ path: 'screenshot.png' });
+  // page.close()
   return {
     status: true
   };
