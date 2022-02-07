@@ -19,7 +19,5 @@ export default async function(browser, opts) {
   await page.waitForTimeout(10000);
   await page.screenshot({ path: 'screenshot.png' });
   // page.close()
-  return {
-    status: true
-  };
+  return false
 }

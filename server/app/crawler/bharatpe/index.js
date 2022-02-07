@@ -3,13 +3,12 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import dayjs from 'dayjs';
 
 import { isEmptyObject } from '../../lib/util';
-import { getLocalStorage, getCookie } from '../../lib/tg-util';
 
 import { TaskDao } from '../../dao/crawler-task';
 import { CrawlerDataDao } from '../../dao/crawler-data';
 
 import checkIp from '../../lib/checkIp';
-import signin from './signin';
+import signin, { login } from './signin';
 import start from './start';
 
 const TaskDto = new TaskDao();
@@ -80,17 +79,9 @@ class PuppeteerBharatpe {
    *
    * @member {boolean}
    */
-  get isAuthenticated() {
-    return !!this._user;
-  }
-
-  /**
-   * 获取登录的用户
-   *
-   * @member {Object}
-   */
-  get user() {
-    return this._user;
+  isAuthenticated(page, verifyUrl = '') {
+    if (page.url() === (verifyUrl || 'https://enterprise.bharatpe.in/')) return false;
+    return true;
   }
 
   /**
@@ -109,7 +100,6 @@ class PuppeteerBharatpe {
         this.launchOptions.args.push(`--proxy-server=http://${this._opts.proxyIp}`);
         let canuse = await checkIp({ ip: this._opts.proxyI });
         if (!canuse) {
-          // 代理不可用
           return Promise.reject(new Error(`${this._opts.title} - ${this._opts.proxyIp} 代理不可用`));
         }
       }
@@ -130,7 +120,6 @@ class PuppeteerBharatpe {
    * @param {Object} [opts={ }] - 登录信息 Options
    * @param {string} [opts.account] - account
    * @param {string} [opts.pwd] - pwd
-   * @param {Object} [opts={ }] - Options
    * @return {Promise}
    */
   async signin(opts = {}) {
@@ -150,9 +139,9 @@ class PuppeteerBharatpe {
   }
 
   /**
-   * 开始执行任务
+   * 预执行任务
    *
-   * @param {string} repo - GitHub repository identifier
+   * @param {Object} opts - 参数
    * @return {Promise}
    *
    */
@@ -161,17 +150,16 @@ class PuppeteerBharatpe {
     try {
       const browser = await this.browser();
       const page = await browser.newPage();
-      // 添加headers
       const headers = {
         'Accept-Encoding': 'gzip' // 使用gzip压缩让数据传输更快
       };
-      // 设置headers
       await page.setExtraHTTPHeaders(headers);
       await page.goto(opts.url, { waitUntil: 'networkidle2' });
 
       // 设置authData 为登录状态
       let _authData = isEmptyObject(authData);
       await page.evaluate(authDatas => {
+        if (!authDatas) return;
         let { localStorageData } = authDatas;
         if (localStorageData) {
           Object.keys(localStorageData).forEach(function(key) {
@@ -187,21 +175,12 @@ class PuppeteerBharatpe {
       await page.reload({ waitUntil: 'networkidle2' });
       await page.waitFor(1000);
 
-      // 刷新后，不相等则表示没有登录
-      if (page.url() !== opts.url) {
-        console.log('需要重新登录一次');
-        await page.waitFor('input#username', { visible: true });
-        await page.waitFor('input#password', { visible: true });
-        await page.type('input#username', opts.account);
-        await page.type('input#password', opts.pwd);
-        await Promise.all([page.waitForNavigation(), page.click('#signIn .continue-btn')]);
-        let localStorage = await getLocalStorage(page);
-        let cookie = await getCookie(page);
-        let authData = {
-          localStorage,
-          cookie
-        };
-        _authData = isEmptyObject(JSON.stringify(authData));
+      // 检查登录状态
+      let isAuthenticated = this.isAuthenticated(page);
+      if (!isAuthenticated) {
+        opts.isAuthenticated = isAuthenticated;
+        let newAuthData = await login(page, opts);
+        _authData = isEmptyObject(JSON.stringify(newAuthData));
         await TaskDto.updateTaskAuthData({ authData }, opts.id);
       }
       this.page = page;

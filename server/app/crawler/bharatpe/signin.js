@@ -1,12 +1,7 @@
 import { getLocalStorage, getCookie } from '../../lib/tg-util';
-export default async function(browser, opts) {
-  const page = await browser.newPage();
-  await page.goto(opts.url);
 
-  console.log('url', page.url());
-
-  // 相等代表已登录 直接获取authData
-  if (page.url() === opts.url) {
+const login = async (page, opts) => {
+  if (!opts.isAuthenticated) {
     let localStorage = await getLocalStorage(page);
     let cookie = await getCookie(page);
 
@@ -14,7 +9,6 @@ export default async function(browser, opts) {
       localStorage,
       cookie
     };
-    await page.close();
     return authData;
   }
 
@@ -34,4 +28,16 @@ export default async function(browser, opts) {
   };
   await page.close();
   return authData;
+};
+
+export default async function(browser, opts) {
+  const page = await browser.newPage();
+  const headers = {
+    'Accept-Encoding': 'gzip' // 使用gzip压缩让数据传输更快
+  };
+  await page.setExtraHTTPHeaders(headers);
+  await page.goto(opts.url);
+  let authData = await login(page, opts);
+  return authData;
 }
+export { login };

@@ -63,6 +63,7 @@ const TaskHandle = async (implement, opt) => {
     const start = hrtime.bigint();
     Instance.start(opt)
       .then(res => {
+        if (!res) return;
         console.log('任务成功', res);
         const end = hrtime.bigint();
         let duration = end - start;
@@ -284,6 +285,7 @@ taskApi.post('/start/task/patch', loginRequired, async ctx => {
   const start = hrtime.bigint();
   Instance.start(opts)
     .then(async res => {
+      if (!res) return;
       const end = hrtime.bigint();
       let duration = end - start;
       let { info } = Instance.filterResult(res, implement);
@@ -382,6 +384,7 @@ taskApi.post('/start/retask', loginRequired, async ctx => {
   const start = hrtime.bigint();
   Instance.start(opts)
     .then(async res => {
+      if (!res) return;
       const end = hrtime.bigint();
       let duration = end - start;
       let { info } = Instance.filterResult(res, implement);

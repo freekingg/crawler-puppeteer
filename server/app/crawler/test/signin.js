@@ -1,32 +1,43 @@
-import {getLocalStorage, getCookie} from "../../lib/tg-util";
-export default async function(browser, opts) {
-  const page = await browser.newPage()
-  await page.goto(opts.url);
+import { getLocalStorage, getCookie } from '../../lib/tg-util';
 
-  await page.waitFor("input[name=account]", { visible: true });
-  await page.waitFor("input[name=password]", { visible: true });
-  await page.evaluate(
-    () => (document.querySelector("input[name=account]").value = "")
-  );
-  await page.evaluate(
-    () => (document.querySelector("input[name=password]").value = "")
-  );
+const login = async (page, opts) => {
+  if (!opts.isAuthenticated) {
+    let localStorage = await getLocalStorage(page);
+    let cookie = await getCookie(page);
 
-  await page.type("input[name=account]", opts.account);
-  await page.type("input[type=password]", opts.pwd);
+    let authData = {
+      localStorage,
+      cookie
+    };
+    return authData;
+  }
 
-  await Promise.all([
-    page.waitForNavigation(),
-    page.click(".btn.btn-success.btn-lg")
-  ])
+  await page.waitFor('input#username', { visible: true });
+  await page.waitFor('input#password', { visible: true });
+  await page.type('input#username', opts.account);
+  await page.type('input#password', opts.pwd);
 
-  let localStorage = await getLocalStorage(page)
-  let cookie = await getCookie(page)
+  await Promise.all([page.waitForNavigation(), page.click('#signIn .continue-btn')]);
+
+  let localStorage = await getLocalStorage(page);
+  let cookie = await getCookie(page);
 
   let authData = {
     localStorage,
     cookie
-  }
+  };
   await page.close();
   return authData;
+};
+
+export default async function(browser, opts) {
+  const page = await browser.newPage();
+  const headers = {
+    'Accept-Encoding': 'gzip' // 使用gzip压缩让数据传输更快
+  };
+  await page.setExtraHTTPHeaders(headers);
+  await page.goto(opts.url);
+  let authData = await login(page, opts);
+  return authData;
 }
+export { login };
