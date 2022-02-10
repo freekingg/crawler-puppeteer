@@ -54,6 +54,11 @@ let launchOptions = {
  * @param {Object} [opts.puppeteer] - Puppeteer [launch options](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions)
  */
 class PuppeteerBharatpe {
+  /**
+   * 获取每轮任务查询参数
+   *
+   * @return {Object}
+   */
   static getParams(newJobTime = {}) {
     let time = {
       startTime: dayjs(newJobTime['endTime'])
@@ -235,6 +240,7 @@ class PuppeteerBharatpe {
    * 过滤结果
    * @params {Object} Object.result 返回的响应数据  Object.crawlerTaskId 任务id
    * @return {Object} Object.info 扩展信息  Object.data 返回的列表数据
+   * @return {Object} Object.list 扩展信息  Object.list 返回的列表数据
    */
 
   filterResult(result, crawlerTaskId = '') {

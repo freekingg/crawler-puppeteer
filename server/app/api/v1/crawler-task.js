@@ -15,10 +15,6 @@ import { CrawlerTaskModel } from '../../model/crawler-task-log';
 
 import { CrawlerTaskLogDao } from '../../dao/crawler-task-log';
 
-import dayjs from 'dayjs';
-import localizedFormat from 'dayjs/plugin/localizedFormat';
-dayjs.extend(localizedFormat);
-
 const taskApi = new LinRouter({
   prefix: '/v1/task',
   module: '任务'
@@ -132,6 +128,8 @@ const TaskHandle = async (implement, opt) => {
         );
       });
   });
+
+  console.log('taskJob', taskJob);
 };
 
 // 初始化任务状态
@@ -450,8 +448,22 @@ taskApi.post('/stop/task', async ctx => {
   if (!taskJob[`task${id}`]) {
     TaskDto.updateTaskStatus({ status: 1 }, id);
   } else {
-    taskJob[`task${id}`]['timer'].cancel();
-    taskJob[`task${id}`]['runing'] = false;
+    try {
+      taskJob[`task${id}`]['timer'].cancel();
+      taskJob[`task${id}`]['runing'] = false;
+    } catch (error) {
+      console.log('任务停止失败', error)
+      CrawlerRunModel.createLog(
+        {
+          task_id: id,
+          status: 1,
+          extra: opt.extra,
+          message: `${opt.title}: 任务停止失败: ${error.message}`,
+          errorStack: `${error.message},${error.stack},`
+        },
+        true
+      );
+    }
   }
   taskJob[`task${id}`]['implement'].close();
   CrawlerRunModel.createLog(

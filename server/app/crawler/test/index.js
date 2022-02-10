@@ -14,7 +14,7 @@ import start from './start';
 const TaskDto = new TaskDao();
 const CrawlerDataDto = new CrawlerDataDao();
 
-puppeteer.use(StealthPlugin());
+// puppeteer.use(StealthPlugin());
 
 let launchOptions = {
   headless: false,
@@ -131,10 +131,11 @@ class PuppeteerTest {
     try {
       const browser = await this.browser();
       authData = await signin(browser, opts);
+      console.log('authData: ', authData);
     } catch (error) {
       return Promise.reject(error);
     }
-    this.close();
+    // this.close();
     return authData;
   }
 
@@ -154,35 +155,143 @@ class PuppeteerTest {
         'Accept-Encoding': 'gzip' // 使用gzip压缩让数据传输更快
       };
       await page.setExtraHTTPHeaders(headers);
-      await page.goto(opts.url, { waitUntil: 'networkidle2' });
+      await page.goto(opts.url, { waitUntil: 'networkidle0' });
 
       // 设置authData 为登录状态
-      let _authData = isEmptyObject(authData);
-      await page.evaluate(authDatas => {
-        if (!authDatas) return;
-        let { localStorageData } = authDatas;
-        if (localStorageData) {
-          Object.keys(localStorageData).forEach(function(key) {
-            localStorage.setItem(key, localStorageData[key]);
-          });
-        }
-      }, _authData);
+      // let _authData = isEmptyObject(authData);
+      // await page.evaluate(authDatas => {
+      //   if (!authDatas) return;
+      //   let { localStorageData } = authDatas;
+      //   if (localStorageData) {
+      //     Object.keys(localStorageData).forEach(function(key) {
+      //       localStorage.setItem(key, localStorageData[key]);
+      //     });
+      //   }
+      // }, _authData);
 
-      let { cookie } = _authData;
+      // let { cookie } = _authData;
+      let cookie = [
+        {
+            "domain": ".yesbank.co.in",
+            "expirationDate": 1644478455.786091,
+            "hostOnly": false,
+            "httpOnly": true,
+            "name": "bm_sv",
+            "path": "/",
+            "sameSite": null,
+            "secure": false,
+            "session": false,
+            "storeId": null,
+            "value": "057F7E0BFC52621E7A4C76297E72129D~W+tLaDt7DuMRl1hNOfHHO2O2vl7/FqcAVV/sfEe7qsrX6Q7FfvOMOSI1c9p0ch46eK77Mm1O0GHIYEVbynDzJ4G+xVWFX6ZkoDmkWtFBpvLJhis/OPn0nTzUAYrYrLH9LxWbQ3QeJwNEwst1yG3slr9RbLleWT4xKiUiLRw+qCA="
+        },
+        {
+            "domain": "yesonline.yesbank.co.in",
+            "expirationDate": 1660124059,
+            "hostOnly": true,
+            "httpOnly": false,
+            "name": "cl5_cookie2",
+            "path": "/",
+            "sameSite": null,
+            "secure": false,
+            "session": false,
+            "storeId": null,
+            "value": "{\"cl5SetCookie\":\"XYCloaQruw7Yz9t9eN85ksEgFZ+bINDnywz4Tg+vG4bmojUf9JU34GrFCwqjhmcNtJVTgDPdiQaDN32D8N6u8F0tWRS9RO2MU2KKXbXrDCedNK/fOkWU20bBr3M/sExoIyUlSK6qJRQNEDLqWssoboCA22TEzal9EJW7INkcGL0hhTZB0TmseUI1jEzU72JMILr3lsZSNf1NRn0Sg5DFOrfUD9HMBzObdSyAhysGlt7HRes+iZNZQT8IawD2mLFdZGNnI9CYBi6RI84ZLB3C0M+T7eCzuPAbCkqpqHXRzNnc+lDMrc0xQoB3x8MMFOdDWr8nR0t+FMC4gXtJzlZlc9SsA0e5gXhYvMr69eX6KJe6sDt7Wrl5VNDVNbmdiT5rZSVrSIAxvewPC6/6ib74izJj2ieBVj5t02cMSN7NM3rsstPxBy0fCXjnODSub+sMPbI5ag9o0gsSShdzLIIKt/ulcjD/vO/PBYNkJyHDXEwEzEeGKLBhg2fN+tvS/f+0uDTLjeyE1T49limorsji8ca6vJi1Z+9w21xFKfr3FCjp6C690H26jZomk0lm4EhRpdiow4OhfOrOvH7QuUruoGwBJblvcm16yvG9/gxLymdabJwQ2xD5RX4vfRuDMgcbHNcanRIbdBMJQI7ywBmqC66Cf2wvxfbxPbSsk3hwLVM=\"}"
+        },
+        {
+            "domain": "yesonline.yesbank.co.in",
+            "expirationDate": 1660124059,
+            "hostOnly": true,
+            "httpOnly": false,
+            "name": "cl5_cookie1",
+            "path": "/",
+            "sameSite": null,
+            "secure": false,
+            "session": false,
+            "storeId": null,
+            "value": "{\"cl5SetCookie\":\"nz4/L6NHbvZP2v42kREzpo+ik9dPo+KSabsbta+48+qDxTMxq01dkf9J3AZUH3PuCaLE3PymkGPQConhcC3OMGnS1/NUVwCsEQkeEOmkjZ+MP5pXcXPcfwNKkyMgurNZxIBUiGHV14QR1RLKNhx5x2R55OfE5PfKyqPfWCeMMEJ2vSRAhDbLwR+FLtpbfWkItgusXAUpFdaAOT3ov9oJbypxVv/EyWFaPL/sKxueATrwYBG//qcBfotjYLbgm4uG+ezoeYH1L7+jTQcLWSFc/SPD5J9hj3m7uJXeh52Bf+KONfuo95JANEF9iIlwJqlG8VeahV53wegD16DJ3YIc4OxFWtDRY9I6daf1v/FlV8Zna3pLlL6FPMM5QPD8TjYAu3cc/Py9eletswQP11DpTDjm/ceGoj7EWXwrMxES43sRviOqzR1QoZkZDFctKy0buiP+u6edgVkIOKZQQwiOvWD5V9nyLPhU11N0E0Iv2mGm8euE+EfRwOgJCiG/XTkIwEnrE6x3l+kCGNTuSz3o3Xg4EPFJYB0+LIWEfVqA1pCPyW4MfGtI0tNG2PzZa0qzJ/pxj2o1a8U022lapVkbsJH3AtAeubgRjhxzdYJqRCzT+ebNPCfAP2hL2DXtqiI6CwXA/mJj/FFWBrIygWgkhnftUEiovsmsnFhVNB77vsY=\"}"
+        },
+        {
+            "domain": "yesonline.yesbank.co.in",
+            "expirationDate": 1660124059,
+            "hostOnly": true,
+            "httpOnly": false,
+            "name": "Cl5_DeviceID",
+            "path": "/",
+            "sameSite": null,
+            "secure": false,
+            "session": false,
+            "storeId": null,
+            "value": "1644471259180123"
+        },
+        {
+            "domain": ".yesbank.co.in",
+            "expirationDate": 1676010695.450744,
+            "hostOnly": false,
+            "httpOnly": false,
+            "name": "_abck",
+            "path": "/",
+            "sameSite": null,
+            "secure": true,
+            "session": false,
+            "storeId": null,
+            "value": "5473643FB461B5921EBEFD5037109D42~0~YAAQfKZUuAY+ct9+AQAA6XxU4geU4CejcjNMPCe5N11iSMTxv6KeYw+bABd0GqE3vgzuEd7I9uH80nleDolMI5z5WeUu5ofX7yH3L++cwAdaSTFGMKj45UXCWiZQd06D/mDXwIu6z9BYScSN+PqlNI9/2vD83ShFo1U1VYfi/CpAn0nS5L3r7rRVfH+39GwC/4OVvan+kWiygys/M8s7/9jWFzKFyBDiD5AOcoyB+N2qzzZ/VSsujgKG2dnG299GVRVUntgIPV9S/E9Ysk3rnvbvR1Jt1GcNx9IbkJvsDw7jcsQeG+AL9FUDlWUdsSNHYSiqvXAFMG5exr0Pmx486Y923bp3RhfVLKEcaWranARRD+zFUc6BiDfqrIsTmRRdkRIzM7jVRoso84S3Y79ArUowkjPn8qfljqXo~-1~-1~-1"
+        },
+        {
+            "domain": ".yesbank.co.in",
+            "expirationDate": 1644478454.097149,
+            "hostOnly": false,
+            "httpOnly": true,
+            "name": "ak_bmsc",
+            "path": "/",
+            "sameSite": null,
+            "secure": false,
+            "session": false,
+            "storeId": null,
+            "value": "10E7057076F4858232810DF2E45B111B~000000000000000000000000000000~YAAQfKZUuI2rcN9+AQAAAgIg4g7+N3JqelDEEMPiPw5hWoJgs/5d2zFPd0ZhGeD3BcslTIrEUmN3qdNptGS1K11b/Kz2gRNiI473evaumtEYrFeDmZ5vaJc45jLjKjdK9YbhxGZ2kt3ykzCbwZPgsVYw13ZMJp3hnH8Q7woifQrCrG0aju/7B2YFrlBsL625eEnEALQLvkZ4rxccAPG3PQMFFu7iLptDzpOzHi05L9t/UpNLHE+/FIkIiTTLjHpAHuI0FQCpEvtjEIejY8FywBZoC6WG5FbOBtsQGxd4INZfeDEm24VXQxxwVcBMYdrOI6LJ/xV5Q2Isl1hGIKI4jfOooXsaqtfO3icGW+r6sgfJKfVSvABJpm2IxxBKAm6hCCITddbRh4dL5Jsc8Dvv1kI+1IVUcN4DDRy4I+KX9Xdq6J4UQYfm9UqL50qKuE2KoWxaURFZzcYBHNnSr5ZbBmvoUrzDKkUAg1AtI+qKAn/6v5SLa+hrF0dkelU="
+        },
+        {
+            "domain": ".yesbank.co.in",
+            "expirationDate": 1644485653.773643,
+            "hostOnly": false,
+            "httpOnly": true,
+            "name": "bm_sz",
+            "path": "/",
+            "sameSite": null,
+            "secure": false,
+            "session": false,
+            "storeId": null,
+            "value": "F17F7C08724FDB36E876882772CF5BC1~YAAQfKZUuFGrcN9+AQAAz/wf4g7OPCecWaN6nhdrqitA/iGV7E0GCMWIrUa8G9PXSir2jkMnswnnd4Axfi+sblb7aSDPu+MLOibcvErBz8bu/1Pu/9M0WmIYZd3rqy8fl3resLfvxUrcGZImHHiPVpG9M/u1QziTtEP43o23ryGWsBMl1a58877uQEBAHiV8V/MG"
+        },
+        {
+            "domain": "yesonline.yesbank.co.in",
+            "expirationDate": 1644476464.78594,
+            "hostOnly": true,
+            "httpOnly": true,
+            "name": "NSC_PCEY-WJQ",
+            "path": "/",
+            "sameSite": null,
+            "secure": true,
+            "session": false,
+            "storeId": null,
+            "value": "ffffffffaf131ad845525d5f4f58455e445a4a42276b"
+        }
+      ]
       await page.setCookie(...cookie);
 
       // 刷新页面，验证登录状态
-      await page.reload({ waitUntil: 'networkidle2' });
+      await page.reload({ waitUntil: 'networkidle0' });
       await page.waitFor(1000);
+      console.log('刷新页面，验证登录状态');
 
       // 检查登录状态
       let isAuthenticated = this.isAuthenticated(page);
-      if (!isAuthenticated) {
-        opts.isAuthenticated = isAuthenticated;
-        let newAuthData = await login(page, opts);
-        _authData = isEmptyObject(JSON.stringify(newAuthData));
-        await TaskDto.updateTaskAuthData({ authData }, opts.id);
-      }
+      console.log('检查登录状态',isAuthenticated);
+      // if (!isAuthenticated) {
+      //   opts.isAuthenticated = isAuthenticated;
+      //   let newAuthData = await login(page, opts);
+      //   _authData = isEmptyObject(JSON.stringify(newAuthData));
+      //   await TaskDto.updateTaskAuthData({ authData }, opts.id);
+      // }
       this.page = page;
       return this.page;
     } catch (error) {
@@ -203,7 +312,7 @@ class PuppeteerTest {
       if (!this.page) {
         this.page = await this.preStart(opts);
       }
-      res = await start(this.page, opts);
+      // res = await start(this.page, opts);
     } catch (error) {
       this.page = null;
       return Promise.reject(error);
