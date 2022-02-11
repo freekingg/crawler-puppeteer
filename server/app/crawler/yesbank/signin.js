@@ -1,7 +1,7 @@
-import { getLocalStorage, getCookie, rdGet } from '../../lib/tg-util';
+import { getLocalStorage, getCookie, rdGet, rdRemove } from '../../lib/tg-util';
 
 const login = async (page, opts) => {
-  await page.goto('https://yesonline.yesbank.co.in/index.html?module=login', { waitUntil: 'networkidle2' });
+  await page.goto('https://yesonline.yesbank.co.in/index.html?module=login');
 
   await page.screenshot({ path: 'login.png', fullPage: true });
 
@@ -12,16 +12,17 @@ const login = async (page, opts) => {
 
   // 跳转opt验证页面
   await page.waitForTimeout(1000);
-  await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle0' }), page.click('#login-button')]);
+  await Promise.all([page.waitForNavigation(), page.click('#login-button')]);
   await page.waitForTimeout(3000);
   await page.screenshot({ path: 'opt.png' });
 
   let getCodeCount = 0;
 
   // 获取登录验证码
+  let memberCode = 'member:code:1486252900431376386';
   const getOptCodeHandle = () => {
     return new Promise(resolve => {
-      rdGet('member:code:1486252900431376386')
+      rdGet(memberCode)
         .then(code => {
           console.log('获取到otp', code, code.length);
           resolve(code);
@@ -40,9 +41,9 @@ const login = async (page, opts) => {
   };
 
   await page.waitFor('#otp input', { visible: true });
+  await page.waitForTimeout(1000);
   let code = await getOptCodeHandle();
   let _code = code.replace(/[^0-9]/gi, '');
-  console.log('_code: ', _code, _code);
   if (!code) {
     return Promise.reject(new Error('获取otp登录验证码出现异常'));
   }
@@ -57,6 +58,9 @@ const login = async (page, opts) => {
 
   let localStorage = await getLocalStorage(page);
   let cookie = await getCookie(page);
+
+  // 移除redis内验证码
+  rdRemove(memberCode);
 
   let authData = {
     localStorage,

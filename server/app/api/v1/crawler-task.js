@@ -260,6 +260,19 @@ taskApi.post('/start/task', loginRequired, async ctx => {
   });
 });
 
+taskApi.post('/start/task/test', loginRequired, async ctx => {
+  const v = await new TaskSearchValidator().validate(ctx);
+  const opt = v.get('body');
+  let opts = opt;
+  const implement = opt.implement;
+  const Instance = new crawler[implement](opt);
+  opts['params'] = crawler[implement]['initParams'];
+  Instance.start(opts)
+  ctx.success({
+    code: 12
+  });
+});
+
 taskApi.post('/start/task/patch', loginRequired, async ctx => {
   const v = await new TaskSearchValidator().validate(ctx);
   const opt = v.get('body');

@@ -26,6 +26,14 @@ class Task {
     })
   }
 
+  async starTirrigationTaskTest(data) {
+    return _axios({
+      method: 'post',
+      url: 'v1/task/start/task/test',
+      data,
+    })
+  }
+
   async patchStarTirrigationTask(data) {
     return _axios({
       method: 'post',
@@ -42,7 +50,7 @@ class Task {
     })
   }
 
-  
+
 
   async stopTirrigationTask(data) {
     return _axios({

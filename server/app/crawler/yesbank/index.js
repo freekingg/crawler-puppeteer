@@ -11,15 +11,26 @@ import checkIp from '../../lib/checkIp';
 import signin, { login } from './signin';
 import start from './start';
 
+import localizedFormat from 'dayjs/plugin/localizedFormat';
+dayjs.extend(localizedFormat);
+
 const TaskDto = new TaskDao();
 const CrawlerDataDto = new CrawlerDataDao();
 
-// puppeteer.use(StealthPlugin());
+puppeteer.use(StealthPlugin());
+
+let localDateStart = dayjs('2022-01-05').format('MMMM D YYYY h:mm A');
+let splitDateStart = localDateStart.split(' ');
+let targetDayStart = dayjs(localDateStart).date(); //开始日期
+console.log('targetDayStart: ', targetDayStart);
+let targetMonthValueStart = splitDateStart[0]; //开始月份
+console.log('targetMonthValueStart: ', targetMonthValueStart);
 
 let launchOptions = {
   headless: false,
   timeout: 60000,
-  ignoreHTTPSErrors: true, // 忽略证书错误
+  ignoreHTTPSErrors: true,
+  executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
   args: [
     '--disable-gpu',
     '--disable-dev-shm-usage',
@@ -53,17 +64,11 @@ let launchOptions = {
  * @param {Object} [opts.browser] - Puppeteer browser instance to use
  * @param {Object} [opts.puppeteer] - Puppeteer [launch options](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions)
  */
-class PuppeteerTest {
+class PuppeteerYesbank {
   static getParams(newJobTime = {}) {
     let time = {
-      startTime: dayjs(newJobTime['endTime'])
-        .set('second', 0)
-        .subtract(1, 'minute')
-        .format('YYYY-MM-DD HH:mm:ss'),
-      endTime: dayjs()
-        .set('second', 0)
-        .add(1, 'minute')
-        .format('YYYY-MM-DD HH:mm:ss')
+      startTime: dayjs().format('YYYY-MM-DD'),
+      endTime: dayjs().format('YYYY-MM-DD')
     };
     return time;
   }
@@ -157,6 +162,17 @@ class PuppeteerTest {
       opts.isAuthenticated = false;
       await login(page, opts);
       console.log('登录成功');
+      // await page.goto('https://yesonline.yesbank.co.in/pages/home.html?module=YPONI');
+      await page.waitForTimeout(1000);
+      // 跳转到流水页面
+      await page.waitFor('.oj-conveyorbelt-item:nth-child(5) > .quick-link > .quick-link-icon > a > img', {
+        visible: true
+      });
+      await Promise.all([
+        page.waitForNavigation({ waitUntil: 'networkidle0' }),
+        page.click('.oj-conveyorbelt-item:nth-child(5) > .quick-link > .quick-link-icon > a > img')
+      ]);
+      await page.waitForTimeout(1000);
 
       this.page = page;
       return this.page;
@@ -178,7 +194,7 @@ class PuppeteerTest {
       if (!this.page) {
         this.page = await this.preStart(opts);
       }
-      // res = await start(this.page, opts);
+      res = await start(this.page, opts);
     } catch (error) {
       this.page = null;
       return Promise.reject(error);
@@ -214,38 +230,29 @@ class PuppeteerTest {
 
   filterResult(result, crawlerTaskId = '') {
     console.log('result', result);
-    let data = result.data.txns.map(item => {
+    let data = result.items.map(item => {
+      let [p1, utrId, received_from] = item.description.split('/');
       return {
-        receivedFrom: item.received_from,
-        utrId: item.utr,
-        vpaId: item.vpa,
-        orderId: item.order_id,
-        amount: item.amount,
+        receivedFrom: received_from,
+        utrId: utrId,
+        vpaId: '',
+        orderId: '',
+        amount: item.amountInAccountCurrency.amount,
         crawlerTaskId: crawlerTaskId,
-        tradeTime: item.txn_date,
-        extra: JSON.stringify({ txn_id: item.txn_id, txn_type: item.txn_type, merchant_id: item.merchant_id })
+        tradeTime: item.transactionDate,
+        extra: ''
       };
     });
     return {
       list: data || [],
-      info: {
-        total: result.data.total.txns,
-        amount: result.data.total.net_settlement_amount,
-        txn_date: result.data.total.txn_date,
-        txn_date_end: result.data.total.txn_date_end
-      }
+      info: {}
     };
   }
 }
 
-PuppeteerTest.initParams = {
-  startTime: dayjs()
-    .set('second', 0)
-    .subtract(1, 'minute')
-    .format('YYYY-MM-DD HH:mm:ss'),
-  endTime: dayjs()
-    .set('second', 0)
-    .format('YYYY-MM-DD HH:mm:ss')
+PuppeteerYesbank.initParams = {
+  startTime: dayjs('2022-02-09').format('YYYY-MM-DD'),
+  endTime: dayjs().format('YYYY-MM-DD')
 };
-export { PuppeteerTest };
+export { PuppeteerYesbank };
 // export default { PuppeteerBharatpe };

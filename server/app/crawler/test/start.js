@@ -1,14 +1,8 @@
 export default async function(browser, opts) {
-  // try {
   const page = browser;
-  // 添加headers
-  const headers = {
-    'Accept-Encoding': 'gzip'
-  };
 
-  // 设置headers
-  await page.setExtraHTTPHeaders(headers);
-  await page.goto(opts.url);
+  // 流水页面
+  await page.goto('https://yesonline.yesbank.co.in/pages/home.html?module=YPONI&page=account-statement');
 
   // await page.waitFor('#login_username', { visible: true, timeout: 30000 });
   // await page.waitFor('#login_password', { visible: true });

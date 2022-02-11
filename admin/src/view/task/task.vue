@@ -67,6 +67,7 @@
                   <el-dropdown-menu>
                     <el-dropdown-item @click="budanHandle(scope.row.id, scope.row)">补单任务</el-dropdown-item>
                     <el-dropdown-item @click="loginHandle(scope.row.id, scope.row)">预登录</el-dropdown-item>
+                    <el-dropdown-item @click="testHandle(scope.row.id, scope.row)">测试</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -139,6 +140,10 @@ export default {
     })
 
     initMixinViewModuleOptions(mixinModuleOptions, data.dataForm)
+
+    const testHandle = (id, row) =>{
+      taskModel.starTirrigationTaskTest(row)
+    }
 
     const startHandle = (id, row) => {
       const loading = ElLoading.service({
@@ -213,6 +218,7 @@ export default {
       loginHandle,
       budanHandle,
       startHandle,
+      testHandle,
     }
   },
 }
