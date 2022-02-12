@@ -43,13 +43,11 @@ let launchOptions = {
     '--no-zygote',
     '--disable-setuid-sandbox',
     '--no-sandbox',
-    '--disable-setuid-sandbox',
     '--disable-webgl',
     '--disable-dev-shm-usage',
     '--disable-xss-auditor', // 关闭 XSS Auditor
     '--no-zygote',
     '--no-sandbox',
-    '--disable-setuid-sandbox',
     '--allow-running-insecure-content', // 允许不安全内容
     '--disable-webgl',
     '--disable-popup-blocking',
@@ -68,7 +66,6 @@ let launchOptions = {
  */
 class PuppeteerYesbank {
   constructor(opts = {}) {
-    console.log('PuppeteerYesbank', opts);
     this._opts = opts;
     this.launchOptions = launchOptions;
     this.init = false; // 是否初始化完成 - 主要用于第一次登录时间较长控制
@@ -218,7 +215,7 @@ class PuppeteerYesbank {
       let memberId = '';
       if (this._opts.extra) {
         let extra = JSON.parse(this._opts.extra);
-        if (!extra.accountId) {
+        if (!extra.memberId) {
           return Promise.reject(new Error('未配置账户id--accountId'));
         }
         memberId = `${extra.memberId}`;

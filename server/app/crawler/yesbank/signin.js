@@ -20,8 +20,8 @@ const login = async (page, opts) => {
   let memberCode = 'member:code:1486252900431376386';
   if (opts.extra) {
     let extra = JSON.parse(opts.extra);
-    if (!extra.accountId) {
-      return Promise.reject(new Error('未配置账户id--accountId'));
+    if (!extra.memberId) {
+      return Promise.reject(new Error('未配置账户id--memberId'));
     }
     memberCode = `member:code:${extra.memberId}`;
   }

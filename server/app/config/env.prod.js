@@ -7,8 +7,8 @@ module.exports = {
     host: '47.243.128.145',
     dialect: 'mysql',
     port: 3306,
-    username: 'root',
-    password: '123456',
+    username: 'bhpadmin@bhp-mysql-prod',
+    password: 'YdVryc1oskCt5yyX',
     logging: false,
     // timezone: '+08:00',
     dialectOptions: {
