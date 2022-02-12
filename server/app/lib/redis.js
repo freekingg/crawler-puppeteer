@@ -5,7 +5,6 @@ import Redis from 'ioredis';
  * redis配置项
  */
 const options = config.getItem('redis', {});
-console.log('options: ', options);
 
 /**
  * 全局的 redis 实例
@@ -21,7 +20,7 @@ redis.on('connect', () => {
   console.log('redis connect ok');
 });
 redis.on('error', (err) => {
-  console.log('redis connect error', err);
+  console.log('redis 连接出错', err);
 });
 
 export default redis;

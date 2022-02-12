@@ -38,6 +38,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="summary" label="备注" width="120" />
+        <el-table-column prop="extra" label="扩展参数" width="120" />
         <el-table-column prop="create_time" label="创建时间" width="160" />
         <el-table-column label="操作" fixed="right" header-align="center" align="center" width="180">
           <template #default="scope">

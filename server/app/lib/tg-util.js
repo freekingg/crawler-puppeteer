@@ -23,12 +23,12 @@ const rdGet = key => {
         if (result) {
           resolve(result);
         } else {
-          reject(new Error('rdGet获取出现异常'));
+          resolve();
         }
       })
       .catch(err => {
         console.log('err: ', err);
-        reject(err);
+        resolve();
       });
   });
 };

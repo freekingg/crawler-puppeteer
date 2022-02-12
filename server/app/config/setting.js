@@ -1,8 +1,14 @@
 const path = require('path');
+let env = {};
+if (process.env.NODE_ENV === 'production') {
+  env = require('./env.prod');
+} else {
+  env = require('./env.dev');
+}
 
 module.exports = {
-  port: 5000,
-  siteDomain: 'http://localhost:5000',
+  port: env.port,
+  siteDomain: env.siteDomain,
   countDefault: 10,
   pageDefault: 0,
   apiDir: 'app/api',

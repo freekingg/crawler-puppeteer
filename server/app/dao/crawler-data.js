@@ -1,4 +1,5 @@
 import { set } from 'lodash';
+import Sequelize from 'sequelize';
 import { CrawlerData as Modals } from '../model/crawler-data';
 import { CrawlerTaskModel } from '../model/crawler-task-log';
 import { CrawlerTask } from '../model/crawler-task';
@@ -25,6 +26,12 @@ class CrawlerDataDao {
     const limit = v.get('query.count');
     v.get('query.crawlerTaskId') && set(condition, 'crawlerTaskId', v.get('query.crawlerTaskId'));
     v.get('query.utrId') && set(condition, 'utrId', v.get('query.utrId'));
+    v.get('query.task_id') && set(condition, 'taskId', v.get('query.task_id'));
+    v.get('query.start') &&
+      v.get('query.end') &&
+      set(condition, 'create_time', {
+        [Sequelize.Op.between]: [v.get('query.start'), v.get('query.end')]
+      });
     const { rows, count } = await Modals.findAndCountAll({
       where: Object.assign({}, condition),
       include: [
@@ -54,9 +61,10 @@ class CrawlerDataDao {
       }
     });
     if (item) {
-      console.log(`${item.id}数据已存在，直接更新本条数据`);
-      this.updateItem(item, body);
-      return;
+      // console.log(`${item.id}数据已存在，直接更新本条数据`);
+      // this.updateItem(item, body);
+      console.log(`${item.id}数据已存在，不处理`);
+      return false;
     }
     const bk = new Modals();
     bk.receivedFrom = body.receivedFrom;
@@ -65,9 +73,11 @@ class CrawlerDataDao {
     bk.orderId = body.orderId;
     bk.amount = body.amount;
     bk.crawlerTaskId = body.crawlerTaskId;
+    bk.taskId = body.taskId;
     bk.tradeTime = body.tradeTime;
     bk.extra = body.extra;
     await bk.save();
+    return true;
   }
 
   async updateItem(item, body) {
@@ -78,6 +88,7 @@ class CrawlerDataDao {
     bk.orderId = body.orderId;
     bk.amount = body.amount;
     bk.crawlerTaskId = body.crawlerTaskId;
+    bk.taskId = body.taskId;
     bk.tradeTime = body.tradeTime;
     bk.extra = body.extra;
     await bk.save();

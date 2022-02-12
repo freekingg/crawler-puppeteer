@@ -238,13 +238,11 @@ class PuppeteerBharatpe {
 
   /**
    * 过滤结果
-   * @params {Object} Object.result 返回的响应数据  Object.crawlerTaskId 任务id
-   * @return {Object} Object.info 扩展信息  Object.data 返回的列表数据
+  * @params {Object} result:返回的响应数据  crawlerTaskId:每轮的任务id taskId:任务id
    * @return {Object} Object.list 扩展信息  Object.list 返回的列表数据
    */
 
-  filterResult(result, crawlerTaskId = '') {
-    console.log('result', result);
+  filterResult(result, crawlerTaskId = '', taskId = '') {
     let data = result.data.txns.map(item => {
       return {
         receivedFrom: item.received_from,
@@ -252,6 +250,7 @@ class PuppeteerBharatpe {
         vpaId: item.vpa,
         orderId: item.order_id,
         amount: item.amount,
+        taskId: taskId,
         crawlerTaskId: crawlerTaskId,
         tradeTime: item.txn_date,
         extra: JSON.stringify({ txn_id: item.txn_id, txn_type: item.txn_type, merchant_id: item.merchant_id })

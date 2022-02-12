@@ -1,18 +1,32 @@
 <template>
   <div class="container">
     <el-row class="container-header" justify="space-between">
-      <el-col :span="15">
+      <el-col :span="21">
         <el-form :inline="true" :model="dataForm" @keyup.enter="getDataList()">
+          <el-form-item>
+            <el-select v-model="dataForm.task_id" class="m-2" placeholder="任务名称" clearable>
+              <el-option
+                v-for="item in tasks"
+                :key="item.id"
+                :label="item.title"
+                :value="item.id"
+              >
+              </el-option>
+           </el-select>
+          </el-form-item>
           <el-form-item>
             <el-input v-model="dataForm.crawlerTaskId" clearable  placeholder="请输入任务编号" />
           </el-form-item>
           <el-form-item>
             <el-input v-model="dataForm.utrId" clearable placeholder="请输入utr" />
           </el-form-item>
+          <el-form-item>
+          <lin-date-picker @dateChange="handleDateChange" ref="searchDateDom" class="date"> </lin-date-picker>
+          </el-form-item>
         </el-form>
       </el-col>
 
-      <el-col :span="6" class="btn-group">
+      <el-col :span="3" class="btn-group">
         <el-button-group>
           <el-button icon="el-icon-search" @click="getDataList(dataForm)">查询</el-button>
         </el-button-group>
@@ -21,11 +35,17 @@
 
     <div class="wrap" style="height:70vh;overflow:auto">
       <el-table size="mini" v-loading="dataListLoading" :data="dataList" border>
-        <el-table-column label="任务编号">
+        <el-table-column label="任务名称">
           <template #default="scope">
             <div>
-              {{scope.row.crawler_task_log.crawler_task.title}} -
-              {{scope.row.crawler_task_log.id}}
+              {{scope.row.crawler_task_log && scope.row.crawler_task_log.crawler_task.title}}
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="任务编号(轮)">
+          <template #default="scope">
+            <div>
+              {{scope.row.crawler_task_log && scope.row.crawler_task_log.id}}
             </div>
           </template>
         </el-table-column>
@@ -33,7 +53,7 @@
         <el-table-column prop="utrId" label="utrId" />
         <el-table-column prop="vpaId" label="vpaId" />
         <el-table-column prop="amount" label="金额" />
-        <el-table-column prop="receivedFrom" label="receivedFrom" />
+        <!-- <el-table-column prop="receivedFrom" label="receivedFrom" /> -->
         <el-table-column prop="tradeTime" label="交易时间" width="160"/>
         <!-- <el-table-column label="扩展消息">
           <template #default="scope">
@@ -91,15 +111,18 @@ import taskDataModel from '@/model/task-data'
 import taskModel from '@/model/task'
 import mixinViewModule from '@/common/mixin/view-module'
 import AddOrUpdate from './log-task-add-or-update.vue'
+import LinDatePicker from '@/component/base/date-picker/lin-date-picker'
 
 export default {
   components: {
     AddOrUpdate,
     History,
+    LinDatePicker
   },
   setup() {
     const addOrUpdate = ref(null)
     const loginAddOrUpdate = ref(null)
+    const searchDateDom = ref()
     const mixinModuleOptions = {
       getDataListIsPage: true,
       addOrUpdate,
@@ -159,6 +182,11 @@ export default {
       return new Date(t1).getTime()/1000 - new Date(t2).getTime()/1000
     }
 
+    const handleDateChange = date => {
+      data.dataForm.start = date[0]
+      data.dataForm.end = date[1]
+    }
+
     return {
       ...toRefs(data),
       getDataList,
@@ -175,6 +203,7 @@ export default {
       limit,
       pageSizeChangeHandle,
       pageCurrentChangeHandle,
+      handleDateChange
     }
   },
 }

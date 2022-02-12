@@ -1,9 +1,14 @@
+CREATE DATABASE IF NOT EXISTS spider DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_bin;
+
+use spider;
+
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ----------------------------
 -- 文件表
 -- ----------------------------
+
 DROP TABLE IF EXISTS lin_file;
 CREATE TABLE lin_file
 (

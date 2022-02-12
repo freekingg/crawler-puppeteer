@@ -13,6 +13,7 @@ class CrawlerData extends Model {
       vpaId: this.vpaId,
       orderId: this.orderId,
       amount: this.amount,
+      taskId: this.taskId,
       crawlerTaskId: this.crawlerTaskId,
       tradeTime: this.tradeTime,
       extra: this.extra,
@@ -51,6 +52,10 @@ CrawlerData.init(
       type: Sequelize.STRING(50),
       allowNull: true
     },
+    taskId: {
+      type: Sequelize.INTEGER,
+      allowNull: true
+    },
     crawlerTaskId: {
       type: Sequelize.INTEGER,
       allowNull: true
@@ -71,9 +76,9 @@ CrawlerData.init(
       modelName: 'crawler_data',
       indexes: [
         {
-          name: 'utrId_del',
+          name: 'utrId',
           unique: true,
-          fields: ['utrId', 'delete_time']
+          fields: ['utrId']
         }
       ]
     },

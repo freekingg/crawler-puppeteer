@@ -6,31 +6,32 @@ import { isEmptyObject } from '../../lib/util';
 
 import { TaskDao } from '../../dao/crawler-task';
 import { CrawlerDataDao } from '../../dao/crawler-data';
-
+import { sender } from '../../lib/rabbitMq';
 import checkIp from '../../lib/checkIp';
 import signin, { login } from './signin';
 import start from './start';
 
 import localizedFormat from 'dayjs/plugin/localizedFormat';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 dayjs.extend(localizedFormat);
+dayjs.extend(isSameOrAfter);
 
-const TaskDto = new TaskDao();
 const CrawlerDataDto = new CrawlerDataDao();
+
+// let data = {
+//   rabbitRoutingKey: 'other.bank.query.pay.routing.key',
+//   objects: ['shorid', '888', '222222222223', '系统', '1486252900431376386', 'test-content', '2021-02-10 10:10:10'],
+//   id: '1486696423914229762'
+// };
+// sender(data);
 
 puppeteer.use(StealthPlugin());
 
-let localDateStart = dayjs('2022-01-05').format('MMMM D YYYY h:mm A');
-let splitDateStart = localDateStart.split(' ');
-let targetDayStart = dayjs(localDateStart).date(); //开始日期
-console.log('targetDayStart: ', targetDayStart);
-let targetMonthValueStart = splitDateStart[0]; //开始月份
-console.log('targetMonthValueStart: ', targetMonthValueStart);
-
 let launchOptions = {
-  headless: false,
+  // headless: false,
   timeout: 60000,
   ignoreHTTPSErrors: true,
-  executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+  devtools: false,
   args: [
     '--disable-gpu',
     '--disable-dev-shm-usage',
@@ -40,11 +41,11 @@ let launchOptions = {
     '--ignore-certifcate-errors',
     '--ignore-certifcate-errors-spki-list',
     '--no-zygote',
+    '--disable-setuid-sandbox',
     '--no-sandbox',
     '--disable-setuid-sandbox',
     '--disable-webgl',
     '--disable-dev-shm-usage',
-    '--disable-web-security',
     '--disable-xss-auditor', // 关闭 XSS Auditor
     '--no-zygote',
     '--no-sandbox',
@@ -52,7 +53,8 @@ let launchOptions = {
     '--allow-running-insecure-content', // 允许不安全内容
     '--disable-webgl',
     '--disable-popup-blocking',
-    '--disable-infobars'
+    '--disable-infobars',
+    '--disable-features=IsolateOrigins,site-per-process'
     // `${proxyObj}`
   ]
 };
@@ -65,18 +67,13 @@ let launchOptions = {
  * @param {Object} [opts.puppeteer] - Puppeteer [launch options](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions)
  */
 class PuppeteerYesbank {
-  static getParams(newJobTime = {}) {
-    let time = {
-      startTime: dayjs().format('YYYY-MM-DD'),
-      endTime: dayjs().format('YYYY-MM-DD')
-    };
-    return time;
-  }
-
   constructor(opts = {}) {
+    console.log('PuppeteerYesbank', opts);
     this._opts = opts;
     this.launchOptions = launchOptions;
+    this.init = false; // 是否初始化完成 - 主要用于第一次登录时间较长控制
     this.page = null;
+    this.lastDateTime = null;
   }
 
   /**
@@ -131,16 +128,8 @@ class PuppeteerYesbank {
     if (!opts.account || !opts.pwd) {
       return Promise.reject(new Error('登录信息不完整，'));
     }
-
     let authData = {};
-    try {
-      const browser = await this.browser();
-      authData = await signin(browser, opts);
-      console.log('authData: ', authData);
-    } catch (error) {
-      return Promise.reject(error);
-    }
-    // this.close();
+    authData = await signin(null, opts);
     return authData;
   }
 
@@ -160,9 +149,9 @@ class PuppeteerYesbank {
       };
       await page.setExtraHTTPHeaders(headers);
       opts.isAuthenticated = false;
+
       await login(page, opts);
       console.log('登录成功');
-      // await page.goto('https://yesonline.yesbank.co.in/pages/home.html?module=YPONI');
       await page.waitForTimeout(1000);
       // 跳转到流水页面
       await page.waitFor('.oj-conveyorbelt-item:nth-child(5) > .quick-link > .quick-link-icon > a > img', {
@@ -173,7 +162,7 @@ class PuppeteerYesbank {
         page.click('.oj-conveyorbelt-item:nth-child(5) > .quick-link > .quick-link-icon > a > img')
       ]);
       await page.waitForTimeout(1000);
-
+      this.init = true;
       this.page = page;
       return this.page;
     } catch (error) {
@@ -194,9 +183,13 @@ class PuppeteerYesbank {
       if (!this.page) {
         this.page = await this.preStart(opts);
       }
+      if (!this.init) {
+        console.log('初始化未完成，等待下一次执行');
+        return Promise.reject(new Error('初始化未完成，等待下一次执行'));
+      }
       res = await start(this.page, opts);
     } catch (error) {
-      this.page = null;
+      // this.page = null;
       return Promise.reject(error);
     }
     return res;
@@ -214,23 +207,66 @@ class PuppeteerYesbank {
   }
 
   /**
-   * 保存数据至数据库
+   * 保存数据至数据库&发送MQ
    *
    * @return {Promise}
    */
   async createItem(item) {
-    return CrawlerDataDto.createItem(item);
+    // sender
+    let result = await CrawlerDataDto.createItem(item);
+    if (result) {
+      let memberId = '';
+      if (this._opts.extra) {
+        let extra = JSON.parse(this._opts.extra);
+        if (!extra.accountId) {
+          return Promise.reject(new Error('未配置账户id--accountId'));
+        }
+        memberId = `${extra.memberId}`;
+      }
+
+      let data = {
+        rabbitRoutingKey: 'other.bank.query.pay.routing.key',
+        objects: [
+          '',
+          String(item.amount),
+          String(item.utrId),
+          '系统',
+          memberId,
+          String(item.description),
+          String(item.tradeTime)
+        ],
+        id: '-1'
+      };
+      console.log('sender', data);
+      sender(data);
+    }
+    return true;
   }
 
   /**
    * 过滤结果
-   * @params {Object} Object.result 返回的响应数据  Object.crawlerTaskId 任务id
+   * @params {Object} result:返回的响应数据  crawlerTaskId:每轮的任务id taskId:任务id
    * @return {Object} Object.info 扩展信息  Object.data 返回的列表数据
    */
 
-  filterResult(result, crawlerTaskId = '') {
-    console.log('result', result);
-    let data = result.items.map(item => {
+  filterResult(result, crawlerTaskId = '', taskId = '') {
+    if (!result.items) {
+      result.items = [];
+    }
+
+    let filterData = [];
+    // 根据最后一条订单时间过街过滤
+    if (this.lastDateTime) {
+      // 过滤最后订单时间 之后的订单  （小时进行判断）
+      filterData = result.items.filter(item => {
+        return dayjs(item.transactionDate).isSameOrAfter(this.lastDateTime, 'minute');
+      });
+      console.log(`根据最后一次的订单${this.lastDateTime}进行过滤`, filterData.length);
+    } else {
+      filterData = result.items;
+    }
+
+    let data = filterData.map(item => {
       let [p1, utrId, received_from] = item.description.split('/');
       return {
         receivedFrom: received_from,
@@ -238,21 +274,49 @@ class PuppeteerYesbank {
         vpaId: '',
         orderId: '',
         amount: item.amountInAccountCurrency.amount,
+        taskId: taskId,
         crawlerTaskId: crawlerTaskId,
         tradeTime: item.transactionDate,
+        description: item.description,
         extra: ''
       };
     });
+
+    // 记录最后一条数据时间
+    if (data.length) {
+      this.lastDateTime = data[0]['tradeTime'];
+      console.log('最后一条数据时间', this.lastDateTime);
+    }
+
     return {
       list: data || [],
-      info: {}
+      info: {
+        total: filterData.length,
+        creditCount: result.summary ? result.summary.creditCount : '',
+        amount: result.summary ? result.summary.creditAmount : '',
+        periodStartDate: result.summary ? result.summary.periodStartDate : '',
+        periodEndDate: result.summary ? result.summary.periodEndDate : ''
+      }
     };
+  }
+
+  static getParams(newJobTime = {}) {
+    let time = {
+      // startTime: dayjs(newJobTime['endTime']).format('YYYY-MM-DD'),
+      // endTime: dayjs().format('YYYY-MM-DD')
+      startTime: dayjs('2022-02-04').format('YYYY-MM-DD'),
+      endTime: dayjs(newJobTime['endTime'])
+        .add(1, 'day')
+        .format('YYYY-MM-DD')
+    };
+    return time;
   }
 }
 
 PuppeteerYesbank.initParams = {
-  startTime: dayjs('2022-02-09').format('YYYY-MM-DD'),
-  endTime: dayjs().format('YYYY-MM-DD')
+  startTime: dayjs().format('YYYY-MM-DD'),
+  // endTime: dayjs().format('YYYY-MM-DD')
+  endTime: dayjs('2022-02-08').format('YYYY-MM-DD')
 };
 export { PuppeteerYesbank };
 // export default { PuppeteerBharatpe };

@@ -28,9 +28,6 @@ const CrawlerTaskLogDto = new CrawlerTaskLogDao();
 const TaskHandle = async (implement, opt) => {
   let id = opt.id;
   const Instance = new crawler[implement](opt);
-  // await Instance.start(opt);
-
-  // return;
 
   CrawlerRunModel.createLog(
     {
@@ -60,11 +57,10 @@ const TaskHandle = async (implement, opt) => {
     Instance.start(opt)
       .then(res => {
         if (!res) return;
-        console.log('任务成功', res);
+        console.log('任务成功');
         const end = hrtime.bigint();
         let duration = end - start;
         taskJob[`task${id}`]['runing'] = false;
-        let { info } = Instance.filterResult(res, implement);
 
         CrawlerRunModel.createLog(
           {
@@ -81,7 +77,6 @@ const TaskHandle = async (implement, opt) => {
             task_id: opt.id,
             task_index: count,
             params: JSON.stringify(taskJob[`task${id}`]['params']),
-            result: JSON.stringify(info),
             status: 0,
             duration,
             message: `${opt.title}: 定时任务执行成功,当前第${count}次`
@@ -89,7 +84,15 @@ const TaskHandle = async (implement, opt) => {
           true
         ).then(async result => {
           let crawlerTaskId = result.id;
-          let { list } = Instance.filterResult(res, implement, crawlerTaskId);
+          let { list, info } = Instance.filterResult(res, crawlerTaskId, id);
+          CrawlerTaskLogDto.updateItem(
+            {
+              task_id: opt.id,
+              result: JSON.stringify(info || {}),
+              status: 0
+            },
+            crawlerTaskId
+          );
           for (const iterator of list) {
             await Instance.createItem(iterator);
           }
@@ -116,7 +119,7 @@ const TaskHandle = async (implement, opt) => {
         );
         CrawlerTaskModel.createLog(
           {
-            task_id: opt.id,
+            task_id: id,
             task_index: count,
             duration,
             params: JSON.stringify(taskJob[`task${id}`]['params']),
@@ -128,8 +131,6 @@ const TaskHandle = async (implement, opt) => {
         );
       });
   });
-
-  console.log('taskJob', taskJob);
 };
 
 // 初始化任务状态
@@ -268,6 +269,12 @@ taskApi.post('/start/task/test', loginRequired, async ctx => {
   const Instance = new crawler[implement](opt);
   opts['params'] = crawler[implement]['initParams'];
   Instance.start(opts)
+    .then(result => {
+      console.log('result: ', result);
+    })
+    .catch(err => {
+      console.log('err: ', err);
+    });
   ctx.success({
     code: 12
   });
@@ -299,8 +306,6 @@ taskApi.post('/start/task/patch', loginRequired, async ctx => {
       if (!res) return;
       const end = hrtime.bigint();
       let duration = end - start;
-      let { info } = Instance.filterResult(res, implement);
-
       // 任务执行完成，关闭实例
       Instance.close();
 
@@ -320,7 +325,6 @@ taskApi.post('/start/task/patch', loginRequired, async ctx => {
           task_id: id,
           duration,
           params: JSON.stringify(opts.params),
-          result: JSON.stringify(info),
           extra: opt.extra,
           status: 0,
           message: `${opts.title}: 补单任务执行成功`
@@ -328,7 +332,15 @@ taskApi.post('/start/task/patch', loginRequired, async ctx => {
         true
       ).then(async result => {
         let crawlerTaskId = result.id;
-        let { list } = Instance.filterResult(res, implement, crawlerTaskId);
+        let { list, info } = Instance.filterResult(res, crawlerTaskId, id);
+        CrawlerTaskLogDto.updateItem(
+          {
+            task_id: opt.id,
+            result: JSON.stringify(info || {}),
+            status: 0
+          },
+          crawlerTaskId
+        );
         for (const iterator of list) {
           await Instance.createItem(iterator);
         }
@@ -398,7 +410,6 @@ taskApi.post('/start/retask', loginRequired, async ctx => {
       if (!res) return;
       const end = hrtime.bigint();
       let duration = end - start;
-      let { info } = Instance.filterResult(res, implement);
 
       CrawlerRunModel.createLog(
         {
@@ -414,7 +425,6 @@ taskApi.post('/start/retask', loginRequired, async ctx => {
       await CrawlerTaskLogDto.updateItem(
         {
           task_id: crawler_task.id,
-          result: JSON.stringify(info),
           status: 0,
           duration,
           message: `${crawler_task.title}-${id} : 异常任务重新执行成功了`
@@ -426,7 +436,15 @@ taskApi.post('/start/retask', loginRequired, async ctx => {
       Instance.close();
 
       let crawlerTaskId = opt.id;
-      let { list } = Instance.filterResult(res, implement, crawlerTaskId);
+      let { list, info } = Instance.filterResult(res, crawlerTaskId, crawler_task.id);
+      CrawlerTaskLogDto.updateItem(
+        {
+          task_id: crawler_task.id,
+          result: JSON.stringify(info || {}),
+          status: 0
+        },
+        crawlerTaskId
+      );
       for (const iterator of list) {
         await Instance.createItem(iterator);
       }
@@ -465,7 +483,7 @@ taskApi.post('/stop/task', async ctx => {
       taskJob[`task${id}`]['timer'].cancel();
       taskJob[`task${id}`]['runing'] = false;
     } catch (error) {
-      console.log('任务停止失败', error)
+      console.log('任务停止失败', error);
       CrawlerRunModel.createLog(
         {
           task_id: id,
@@ -477,6 +495,7 @@ taskApi.post('/stop/task', async ctx => {
         true
       );
     }
+    TaskDto.updateTaskStatus({ status: 1 }, id);
   }
   taskJob[`task${id}`]['implement'].close();
   CrawlerRunModel.createLog(
