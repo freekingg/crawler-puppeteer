@@ -5,23 +5,17 @@
         <el-form :inline="true" :model="dataForm" @keyup.enter="getDataList()">
           <el-form-item>
             <el-select v-model="dataForm.task_id" class="m-2" placeholder="任务名称" clearable>
-              <el-option
-                v-for="item in tasks"
-                :key="item.id"
-                :label="item.title"
-                :value="item.id"
-              >
-              </el-option>
-           </el-select>
+              <el-option v-for="item in tasks" :key="item.id" :label="item.title" :value="item.id"> </el-option>
+            </el-select>
           </el-form-item>
           <el-form-item>
-            <el-input v-model="dataForm.crawlerTaskId" clearable  placeholder="请输入任务编号" />
+            <el-input v-model="dataForm.crawlerTaskId" clearable placeholder="请输入任务编号" />
           </el-form-item>
           <el-form-item>
             <el-input v-model="dataForm.utrId" clearable placeholder="请输入utr" />
           </el-form-item>
           <el-form-item>
-          <lin-date-picker @dateChange="handleDateChange" ref="searchDateDom" class="date"> </lin-date-picker>
+            <lin-date-picker @dateChange="handleDateChange" ref="searchDateDom" class="date"> </lin-date-picker>
           </el-form-item>
         </el-form>
       </el-col>
@@ -38,23 +32,23 @@
         <el-table-column label="任务名称">
           <template #default="scope">
             <div>
-              {{scope.row.crawler_task_log && scope.row.crawler_task_log.crawler_task.title}}
+              {{ scope.row.crawler_task_log && scope.row.crawler_task_log.crawler_task.title }}
             </div>
           </template>
         </el-table-column>
         <el-table-column label="任务编号(轮)">
           <template #default="scope">
             <div>
-              {{scope.row.crawler_task_log && scope.row.crawler_task_log.id}}
+              {{ scope.row.crawler_task_log && scope.row.crawler_task_log.id }}
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="crawler_task_log.create_time" label="任务时间" width="160"/>
+        <el-table-column prop="crawler_task_log.create_time" label="任务时间" width="160" />
         <el-table-column prop="utrId" label="utrId" />
         <el-table-column prop="vpaId" label="vpaId" />
         <el-table-column prop="amount" label="金额" />
         <!-- <el-table-column prop="receivedFrom" label="receivedFrom" /> -->
-        <el-table-column prop="tradeTime" label="交易时间" width="160"/>
+        <el-table-column prop="tradeTime" label="交易时间" width="160" />
         <!-- <el-table-column label="扩展消息">
           <template #default="scope">
             <div>
@@ -78,9 +72,7 @@
         <el-table-column prop="create_time" label="创建时间" width="160" />
         <el-table-column label="抓取延时">
           <template #default="scope">
-            <div>
-              {{diffTime(scope.row.create_time,scope.row.tradeTime)}}秒
-            </div>
+            <div>{{ diffTime(scope.row.create_time, scope.row.tradeTime) }}秒</div>
           </template>
         </el-table-column>
         <el-table-column prop="update_time" label="更新时间" width="160" />
@@ -106,7 +98,7 @@
 </template>
 
 <script>
-import { reactive, toRefs, ref, nextTick } from 'vue'
+import { reactive, toRefs, ref, onMounted } from 'vue'
 import taskDataModel from '@/model/task-data'
 import taskModel from '@/model/task'
 import mixinViewModule from '@/common/mixin/view-module'
@@ -117,7 +109,7 @@ export default {
   components: {
     AddOrUpdate,
     History,
-    LinDatePicker
+    LinDatePicker,
   },
   setup() {
     const addOrUpdate = ref(null)
@@ -149,37 +141,39 @@ export default {
       dataForm: {
         type: 1,
       },
-      tasks:[],
-      status:[
+      tasks: [],
+      status: [
         {
-          title:'正常',
-          status:0
+          title: '正常',
+          status: 0,
         },
         {
-          title:'异常',
-          status:1
-        }
+          title: '异常',
+          status: 1,
+        },
       ],
       loginAddOrUpdateVisible: false,
       historyVisible: false,
     })
 
-    taskModel.getTasks().then((result) => {
-      data.tasks = result.map(item=>{
-        return {
-          title:item.title,
-          id:item.id,
-        }
+    onMounted(() => {
+      taskModel.getTasks().then(result => {
+        data.tasks = result.map(item => {
+          return {
+            title: item.title,
+            id: item.id,
+          }
+        })
       })
     })
 
     initMixinViewModuleOptions(mixinModuleOptions, data.dataForm)
 
-    const diffTime = (t1,t2) =>{
-      if(!t1 || !t2){
+    const diffTime = (t1, t2) => {
+      if (!t1 || !t2) {
         return '-'
       }
-      return new Date(t1).getTime()/1000 - new Date(t2).getTime()/1000
+      return new Date(t1).getTime() / 1000 - new Date(t2).getTime() / 1000
     }
 
     const handleDateChange = date => {
@@ -203,7 +197,7 @@ export default {
       limit,
       pageSizeChangeHandle,
       pageCurrentChangeHandle,
-      handleDateChange
+      handleDateChange,
     }
   },
 }
@@ -242,7 +236,7 @@ export default {
     overflow: auto;
   }
 }
-.btn-area button{
+.btn-area button {
   margin-bottom: 4px;
 }
 </style>

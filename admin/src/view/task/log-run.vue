@@ -80,7 +80,7 @@
 </template>
 
 <script>
-import { reactive, toRefs, ref, nextTick } from 'vue'
+import { reactive, toRefs, ref, nextTick,onMounted } from 'vue'
 
 import logModel from '@/model/log-run'
 import taskModel from '@/model/task'
@@ -132,12 +132,14 @@ export default {
       loginAddOrUpdateVisible: false,
     })
 
-    taskModel.getTasks().then((result) => {
-      data.tasks = result.map(item=>{
-        return {
-          title:item.title,
-          id:item.id,
-        }
+    onMounted(() => {
+      taskModel.getTasks().then(result => {
+        data.tasks = result.map(item => {
+          return {
+            title: item.title,
+            id: item.id,
+          }
+        })
       })
     })
 
