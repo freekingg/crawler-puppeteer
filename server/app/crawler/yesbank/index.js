@@ -1,10 +1,10 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import dayjs from 'dayjs';
+import path from 'path';
 
-import { isEmptyObject } from '../../lib/util';
+import { screenshot } from '../../lib/tg-util';
 
-import { TaskDao } from '../../dao/crawler-task';
 import { CrawlerDataDao } from '../../dao/crawler-data';
 import { sender } from '../../lib/rabbitMq';
 import checkIp from '../../lib/checkIp';
@@ -138,12 +138,13 @@ class PuppeteerYesbank {
    *
    */
   async preStart(opts = {}) {
+    const browser = await this.browser();
+    const page = await browser.newPage();
+    const headers = {
+      'Accept-Encoding': 'gzip'
+    };
+
     try {
-      const browser = await this.browser();
-      const page = await browser.newPage();
-      const headers = {
-        'Accept-Encoding': 'gzip' // 使用gzip压缩让数据传输更快
-      };
       await page.setExtraHTTPHeaders(headers);
       opts.isAuthenticated = false;
 
@@ -163,6 +164,7 @@ class PuppeteerYesbank {
       this.page = page;
       return this.page;
     } catch (error) {
+      screenshot(page, path.join(__dirname, '/log', 'login-error.png'));
       return Promise.reject(error);
     }
   }
@@ -170,12 +172,13 @@ class PuppeteerYesbank {
   /**
    * 开始执行任务
    *
-   * @param {string} repo - GitHub repository identifier
+   * @param {Object} opts - 参数
    * @return {Promise}
    *
    */
   async start(opts = {}) {
     let res = {};
+    if (opts.retask) return Promise.reject(new Error('不允许重新执行任务失败'));
     try {
       if (!this.page) {
         this.page = await this.preStart(opts);
@@ -187,6 +190,7 @@ class PuppeteerYesbank {
       res = await start(this.page, opts);
     } catch (error) {
       // this.page = null;
+      screenshot(this.page, path.join(__dirname, '/log', 'task-error.png'));
       return Promise.reject(error);
     }
     return res;
@@ -209,7 +213,6 @@ class PuppeteerYesbank {
    * @return {Promise}
    */
   async createItem(item) {
-    // sender
     let result = await CrawlerDataDto.createItem(item);
     if (result) {
       let memberId = '';
@@ -221,6 +224,7 @@ class PuppeteerYesbank {
         memberId = `${extra.memberId}`;
       }
 
+      // mq发送数据
       let data = {
         rabbitRoutingKey: 'other.bank.query.pay.routing.key',
         objects: [
@@ -234,7 +238,6 @@ class PuppeteerYesbank {
         ],
         id: '-1'
       };
-      console.log('sender', data);
       sender(data);
     }
     return true;
@@ -297,23 +300,29 @@ class PuppeteerYesbank {
     };
   }
 
+  /**
+   * 获取每次查询的参数
+   * @params {newJobTime} 开始与结束时间
+   * @return {Object}
+   */
   static getParams(newJobTime = {}) {
     let time = {
-      // startTime: dayjs(newJobTime['endTime']).format('YYYY-MM-DD'),
-      // endTime: dayjs().format('YYYY-MM-DD')
-      startTime: dayjs('2022-02-04').format('YYYY-MM-DD'),
-      endTime: dayjs(newJobTime['endTime'])
-        .add(1, 'day')
-        .format('YYYY-MM-DD')
+      startTime: dayjs(newJobTime['endTime']).format('YYYY-MM-DD'),
+      endTime: dayjs().format('YYYY-MM-DD')
+      // startTime: dayjs('2022-02-04').format('YYYY-MM-DD'),
+      // endTime: dayjs(newJobTime['endTime'])
+      //   .add(1, 'day')
+      //   .format('YYYY-MM-DD')
     };
     return time;
   }
 }
 
+// 默认查询参数
 PuppeteerYesbank.initParams = {
   startTime: dayjs().format('YYYY-MM-DD'),
-  // endTime: dayjs().format('YYYY-MM-DD')
-  endTime: dayjs('2022-02-08').format('YYYY-MM-DD')
+  endTime: dayjs().format('YYYY-MM-DD')
+  // endTime: dayjs('2022-02-08').format('YYYY-MM-DD')
 };
 export { PuppeteerYesbank };
 // export default { PuppeteerBharatpe };

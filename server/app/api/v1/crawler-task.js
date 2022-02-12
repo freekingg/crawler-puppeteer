@@ -391,6 +391,7 @@ taskApi.post('/start/retask', loginRequired, async ctx => {
   const implement = crawler_task.implement;
   let opts = {
     ...opt.crawler_task,
+    retask: true,
     params: opt.params ? JSON.parse(opt.params) : {}
   };
   CrawlerRunModel.createLog(

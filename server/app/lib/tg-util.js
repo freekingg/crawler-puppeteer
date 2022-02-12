@@ -15,6 +15,10 @@ async function getCookie(page) {
   return cookies;
 }
 
+function screenshot(page, path) {
+  page.screenshot({ path: path }).catch(() => console.log('截图失败'));
+}
+
 const rdGet = key => {
   return new Promise((resolve, reject) => {
     redis
@@ -47,4 +51,4 @@ const rdRemove = key => {
   });
 };
 
-export { getLocalStorage, getCookie, rdGet, rdRemove };
+export { getLocalStorage, getCookie, rdGet, rdRemove, screenshot };
