@@ -53,6 +53,7 @@
     "axios": "^0.25.0",
     "crypto": "^1.0.1",
     "dayjs": "^1.10.7",
+    "fs-extra": "^10.0.0",
     "ioredis": "^4.28.5",
     "koa": "^2.7.0",
     "koa-bodyparser": "^4.2.1",

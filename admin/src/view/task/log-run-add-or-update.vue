@@ -1,12 +1,8 @@
 <template>
   <el-dialog v-model="visible" title="Tips">
-    <el-form
-      :model="dataForm"
-      ref="dataFormRef"
-      label-width="120px"
-    >
+    <el-form :model="dataForm" ref="dataFormRef" label-width="120px">
       <el-form-item label="任务名称">
-        <el-input v-model="dataForm.crawler_task.title" readonly  />
+        <el-input v-model="dataForm.crawler_task.title" readonly />
       </el-form-item>
       <el-form-item label="信息">
         <el-input
@@ -27,7 +23,7 @@
         ></el-input>
       </el-form-item>
       <el-form-item label="时间">
-        <el-input v-model="dataForm.create_time" readonly  />
+        <el-input v-model="dataForm.create_time" readonly />
       </el-form-item>
     </el-form>
   </el-dialog>
@@ -52,6 +48,8 @@ export default {
         phone: '',
         crawler_task: {},
       },
+      img: '',
+      imgs: '',
       loading: false,
     })
 
@@ -77,7 +75,7 @@ export default {
 }
 </script>
 <style scoped>
-.el-form--inline{
+.el-form--inline {
   display: flex;
 }
 </style>

@@ -2,6 +2,7 @@ import Koa from 'koa';
 import KoaBodyParser from 'koa-bodyparser';
 import cors from '@koa/cors';
 import mount from 'koa-mount';
+import path from 'path';
 import serve from 'koa-static';
 import { config, json, logging, success, jwt, Loader } from 'lin-mizar';
 import { PermissionModel } from './model/permission';
@@ -45,7 +46,9 @@ function applyBodyParse (app) {
  */
 function applyStatic (app, prefix = '/assets') {
   const assetsDir = config.getItem('file.storeDir', 'app/static');
+  const crawlerAssetsDir = path.join(__dirname, './crawler/log');
   app.use(mount(prefix, serve(assetsDir)));
+  app.use(mount('/log', serve(crawlerAssetsDir)));
 }
 
 /**

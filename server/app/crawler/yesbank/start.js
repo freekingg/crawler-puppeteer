@@ -26,11 +26,11 @@ export default async function(browser, opts) {
   }
 
   // 选择日期模式
-  await page.waitFor('#collapsiblePage', { visible: true });
+  await page.waitForSelector('#collapsiblePage', { visible: true });
   await page.click('#collapsiblePage input[value="DateRange"]');
 
   // 打开日期选择器
-  await page.waitFor('#collapsiblePage .date-range-div', { visible: true });
+  await page.waitForSelector('#collapsiblePage .date-range-div', { visible: true });
   let datePickers = await page.$$('.date-range-div .oj-inputdatetime-input-trigger');
   await page.waitForTimeout(1000);
   // 开始选择控件

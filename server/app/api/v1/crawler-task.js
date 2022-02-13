@@ -394,16 +394,6 @@ taskApi.post('/start/retask', loginRequired, async ctx => {
     retask: true,
     params: opt.params ? JSON.parse(opt.params) : {}
   };
-  CrawlerRunModel.createLog(
-    {
-      task_id: crawler_task.id,
-      task_index: opt.task_index,
-      message: `${crawler_task.title}-${opt.id} 异常任务开始重新执行了`,
-      status: 0
-    },
-    true
-  );
-
   const Instance = new crawler[implement](opts);
   const start = hrtime.bigint();
   Instance.start(opts)
@@ -412,12 +402,12 @@ taskApi.post('/start/retask', loginRequired, async ctx => {
       const end = hrtime.bigint();
       let duration = end - start;
 
-      CrawlerRunModel.createLog(
+      await CrawlerRunModel.createLog(
         {
           task_id: crawler_task.id,
           duration,
           task_index: opt.task_index,
-          message: `${crawler_task.title}-${id} : 异常任务重新执行成功了`,
+          message: `${crawler_task.title}-${id} : 任务重新执行成功了`,
           status: 0
         },
         true
@@ -459,7 +449,7 @@ taskApi.post('/start/retask', loginRequired, async ctx => {
           task_id: crawler_task.id,
           task_index: opt.task_index,
           duration,
-          message: `${crawler_task.title}-${opt.id}: 异常任务重新执行还是失败,${error.message}`,
+          message: `${crawler_task.title}-${opt.id}: 异常任务重新执行还是失败, ${error.message}`,
           status: 1
         },
         true
@@ -513,7 +503,7 @@ taskApi.post('/stop/task', async ctx => {
   });
 });
 
-taskApi.put('/:id', async ctx => {
+taskApi.linPut('putTask', '/:id', taskApi.permission('修改任务'), groupRequired, async ctx => {
   const v = await new CreateOrUpdateTaskValidator().validate(ctx);
   const id = getSafeParamId(ctx);
   await TaskDto.updateTask(v, id);

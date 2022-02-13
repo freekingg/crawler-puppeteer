@@ -1,7 +1,11 @@
 import puppeteer from 'puppeteer-extra';
+import { config } from 'lin-mizar';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import dayjs from 'dayjs';
 import path from 'path';
+import fs from 'fs-extra';
+
+import telegram from '../../lib/report-telegram';
 
 import { screenshot } from '../../lib/tg-util';
 
@@ -16,19 +20,13 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 dayjs.extend(localizedFormat);
 dayjs.extend(isSameOrAfter);
 
-const CrawlerDataDto = new CrawlerDataDao();
+// let s = fs.pathExistsSync(path.join(__dirname, '/log','a.jpg'))
 
-// let data = {
-//   rabbitRoutingKey: 'other.bank.query.pay.routing.key',
-//   objects: ['shorid', '888', '222222222223', '系统', '1486252900431376386', 'test-content', '2021-02-10 10:10:10'],
-//   id: '1486696423914229762'
-// };
-// sender(data);
+const CrawlerDataDto = new CrawlerDataDao();
 
 puppeteer.use(StealthPlugin());
 
 let launchOptions = {
-  // headless: false,
   timeout: 60000,
   ignoreHTTPSErrors: true,
   devtools: false,
@@ -40,20 +38,14 @@ let launchOptions = {
     '--disable-accelerated-2d-canvas',
     '--ignore-certifcate-errors',
     '--ignore-certifcate-errors-spki-list',
-    '--no-zygote',
     '--disable-setuid-sandbox',
     '--no-sandbox',
     '--disable-webgl',
-    '--disable-dev-shm-usage',
-    '--disable-xss-auditor', // 关闭 XSS Auditor
     '--no-zygote',
-    '--no-sandbox',
     '--allow-running-insecure-content', // 允许不安全内容
-    '--disable-webgl',
     '--disable-popup-blocking',
     '--disable-infobars',
     '--disable-features=IsolateOrigins,site-per-process'
-    // `${proxyObj}`
   ]
 };
 
@@ -152,7 +144,7 @@ class PuppeteerYesbank {
       console.log('登录成功');
       await page.waitForTimeout(1000);
       // 跳转到流水页面
-      await page.waitFor('.oj-conveyorbelt-item:nth-child(5) > .quick-link > .quick-link-icon > a > img', {
+      await page.waitForSelector('.oj-conveyorbelt-item:nth-child(5) > .quick-link > .quick-link-icon > a > img', {
         visible: true
       });
       await Promise.all([
@@ -164,7 +156,7 @@ class PuppeteerYesbank {
       this.page = page;
       return this.page;
     } catch (error) {
-      screenshot(page, path.join(__dirname, '/log', 'login-error.png'));
+      screenshot(page, path.join(__dirname, '../log', `${dayjs().format('YYYYMMDDhhmmss')}.jpeg`));
       return Promise.reject(error);
     }
   }
@@ -179,6 +171,7 @@ class PuppeteerYesbank {
   async start(opts = {}) {
     let res = {};
     if (opts.retask) return Promise.reject(new Error('不允许重新执行任务失败'));
+
     try {
       if (!this.page) {
         this.page = await this.preStart(opts);
@@ -190,7 +183,19 @@ class PuppeteerYesbank {
       res = await start(this.page, opts);
     } catch (error) {
       // this.page = null;
-      screenshot(this.page, path.join(__dirname, '/log', 'task-error.png'));
+      let errimg = '';
+      if (this.page) {
+        let name = `${dayjs().format('YYYYMMDDhhmmss')}.jpeg`;
+        await screenshot(this.page, path.join(__dirname, '../log', `${name}`));
+        let siteDomain = config.getItem('siteDomain', 'http://localhost');
+        errimg = `${siteDomain}/log/${name}`;
+      }
+      telegram({
+        title: this._opts.title,
+        message: `${this._opts.title}: 异常: ${error.message}`,
+        errorStack: `${error.stack}`,
+        img: `${errimg}`
+      });
       return Promise.reject(error);
     }
     return res;

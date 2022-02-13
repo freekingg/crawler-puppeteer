@@ -15,8 +15,8 @@ async function getCookie(page) {
   return cookies;
 }
 
-function screenshot(page, path) {
-  page.screenshot({ path: path }).catch(() => console.log('截图失败'));
+async function screenshot(page, path) {
+  await page.screenshot({ path: path, type: 'jpeg', qulity: 60 }).catch((err) => console.log('截图失败', err));
 }
 
 const rdGet = key => {

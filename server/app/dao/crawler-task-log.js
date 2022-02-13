@@ -14,7 +14,7 @@ class CrawlerTaskLogDao {
         {
           model: CrawlerTask,
           as: 'crawler_task',
-          attributes: ['id'],
+          // attributes: ['id', 'implement', 'title']
         }
       ]
     });

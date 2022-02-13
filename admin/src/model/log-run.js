@@ -15,6 +15,18 @@ class Log {
     return res
   }
 
+  async getErrImgLog() {
+    const res = await get(`v1/crawler/run/log/err/img`)
+    return res
+  }
+
+  async delErrImgLog() {
+    return _axios({
+      method: 'post',
+      url: 'v1/crawler/run/log/err/img/clear',
+    })
+  }
+
   async editLog(id, info) {
     const res = await put(`v1/crawler/run/log/${id}`, info)
     return res

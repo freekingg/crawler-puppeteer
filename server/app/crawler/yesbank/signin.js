@@ -1,12 +1,11 @@
 import { getLocalStorage, getCookie, rdGet, rdRemove } from '../../lib/tg-util';
 
 const login = async (page, opts) => {
-  console.log('opts', opts);
   await page.goto('https://yesonline.yesbank.co.in/index.html?module=login');
 
-  await page.waitFor('#login_username', { visible: true, timeout: 30000 });
+  await page.waitForSelector('#login_username', { visible: true, timeout: 30000 });
   // await page.screenshot({ path: 'login.png', fullPage: true });
-  await page.waitFor('#login_password', { visible: true });
+  await page.waitForSelector('#login_password', { visible: true });
   await page.type('#login_username input', opts.account);
   await page.type('#login_password input', opts.pwd);
 
@@ -14,6 +13,12 @@ const login = async (page, opts) => {
   await page.waitForTimeout(1000);
   await Promise.all([page.waitForNavigation(), page.click('#login-button')]);
   await page.waitForTimeout(3000);
+
+  // 判断是否有google验证
+  let auth = await page.$('#html_element iframe');
+  if (auth) {
+    return Promise.reject(new Error('需要进行Google进行人机身份验证,登录失败'));
+  }
 
   let getCodeCount = 0;
   // 获取登录验证码
@@ -47,7 +52,7 @@ const login = async (page, opts) => {
     });
   };
 
-  await page.waitFor('#otp input', { visible: true });
+  await page.waitForSelector('#otp input', { visible: true });
   await page.waitForTimeout(1000);
   // await page.screenshot({ path: 'opt.png' });
   let code = await getOptCodeHandle();

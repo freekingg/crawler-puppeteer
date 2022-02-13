@@ -5,33 +5,25 @@
         <el-form :inline="true" :model="dataForm" @keyup.enter="getDataList()">
           <el-form-item>
             <el-select v-model="dataForm.task_id" class="m-2" placeholder="任务名称" clearable>
-              <el-option
-                v-for="item in tasks"
-                :key="item.id"
-                :label="item.title"
-                :value="item.id"
-              >
-              </el-option>
-           </el-select>
+              <el-option v-for="item in tasks" :key="item.id" :label="item.title" :value="item.id"> </el-option>
+            </el-select>
           </el-form-item>
           <el-form-item>
             <el-select v-model="dataForm.status" class="m-2" placeholder="运行状态" clearable>
-              <el-option
-                v-for="item in status"
-                :key="item.status"
-                :label="item.title"
-                :value="item.status"
-              >
+              <el-option v-for="item in status" :key="item.status" :label="item.title" :value="item.status">
               </el-option>
-           </el-select>
+            </el-select>
           </el-form-item>
         </el-form>
       </el-col>
 
       <el-col :span="6" class="btn-group">
-        <el-button-group>
+        <div>
+          <el-button icon="el-icon-picture" size="small" type="danger" @click="getErrorList(dataForm)"
+            >异常图片</el-button
+          >
           <el-button icon="el-icon-search" @click="getDataList(dataForm)">查询</el-button>
-        </el-button-group>
+        </div>
       </el-col>
     </el-row>
 
@@ -44,7 +36,11 @@
             <p class="brief">
               <span class="text-yellow">{{ log.crawler_task ? log.crawler_task.title : '' }}</span>
               {{ $filters.dateTimeFormatter(log.create_time) }}
-              <span style="vertical-align: baseline;padding-left:4px;color:#33cea8;cursor: pointer;" @click="addOrUpdateHandle(log.id)">详情</span>
+              <span
+                style="vertical-align: baseline;padding-left:4px;color:#33cea8;cursor: pointer;"
+                @click="addOrUpdateHandle(log.id)"
+                >详情</span
+              >
             </p>
           </aside>
         </section>
@@ -76,11 +72,32 @@
     </div>
     <!-- 弹窗, 新增 / 修改 -->
     <add-or-update v-if="addOrUpdateVisible" ref="addOrUpdate" @refreshDataList="getDataList(dataForm)" />
+
+    <el-dialog v-model="dialogVisible" title="异常截图(最近20张)">
+      <div class="boxs">
+        <el-image
+          v-for="(item,index) in imgs"
+          :key="index"
+          style="width: 100px; height: 100px;margin:4px"
+          :src="item"
+          :preview-src-list="imgs"
+          :initial-index="4"
+          fit="cover"
+        >
+        </el-image>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="dialogVisible = false">关闭</el-button>
+          <el-button type="primary" @click="delErrImgLog">清空</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { reactive, toRefs, ref, nextTick,onMounted } from 'vue'
+import { reactive, toRefs, ref, nextTick, onMounted } from 'vue'
 
 import logModel from '@/model/log-run'
 import taskModel from '@/model/task'
@@ -94,6 +111,7 @@ export default {
   setup() {
     const addOrUpdate = ref(null)
     const loginAddOrUpdate = ref(null)
+    const dialogVisible = ref(false)
     const mixinModuleOptions = {
       getDataListIsPage: true,
       addOrUpdate,
@@ -118,18 +136,20 @@ export default {
 
     const data = reactive({
       dataForm: {},
-      tasks:[],
-      status:[
+      tasks: [],
+      status: [
         {
-          title:'正常',
-          status:0
+          title: '正常',
+          status: 0,
         },
         {
-          title:'异常',
-          status:1
-        }
+          title: '异常',
+          status: 1,
+        },
       ],
       loginAddOrUpdateVisible: false,
+      img: '',
+      imgs: '',
     })
 
     onMounted(() => {
@@ -153,6 +173,24 @@ export default {
       })
     }
 
+    const getErrorList = id => {
+      dialogVisible.value = true
+      logModel.getErrImgLog().then(result => {
+        if (result.length) {
+          data.img = result[0]
+          data.imgs = result
+        }
+      })
+    }
+
+    const delErrImgLog = id => {
+      logModel.delErrImgLog().then(result => {
+         dialogVisible.value = false
+      })
+    }
+
+
+
     return {
       ...toRefs(data),
       getDataList,
@@ -168,6 +206,9 @@ export default {
       limit,
       pageSizeChangeHandle,
       pageCurrentChangeHandle,
+      dialogVisible,
+      getErrorList,
+      delErrImgLog,
       loginHandle,
     }
   },
@@ -299,7 +340,7 @@ export default {
   height: 80px;
   line-height: 80px;
 }
-.content{
+.content {
   height: 70vh;
   overflow: auto;
 }

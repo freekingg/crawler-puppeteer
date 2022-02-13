@@ -132,3 +132,9 @@ pm2 logs [ID]      //根据指定应用ID查看应用日志
 pm2 kill
 rm -rf ~/.pm2 
 ```
+
+```
+@papapalalalaBot
+5263440831:AAFbN28wKEMCWWtXu_KVQ9I-S0msV6L14ts
+-590496372
+```
